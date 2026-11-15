@@ -1,0 +1,115 @@
+<section class="mx-auto flex min-h-screen w-full flex-col items-center px-6 pt-16 sm:pt-24">
+  <img
+    src="/assets/images/icon_512.png"
+    alt="Logo da Prattio"
+    width="117"
+    height="101"
+    fetchpriority="high"
+    decoding="async"
+    class="mb-10 h-auto w-24 object-contain sm:w-28"
+  />
+
+  <div class="flex w-full max-w-sm flex-col items-center text-center">
+    <h1 class="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
+      Que bom ter você aqui!
+    </h1>
+
+    <span class="mt-2 text-sm font-medium text-gray-500 sm:text-base">
+      Acesse sua conta para continuar.
+    </span>
+
+    <div class="mt-6 h-1 w-12 rounded-full bg-brand"></div>
+  </div>
+
+  <form class="mt-10 w-full max-w-sm" (submit)="authenticate($event)" novalidate method="post">
+    <fieldset class="flex flex-col gap-5">
+      <!-- Email field -->
+      <div class="flex flex-col gap-2">
+        <label for="email" class="text-sm font-semibold text-gray-700"> Email </label>
+
+        <div class="relative">
+          <ng-icon
+            name="lucideMail"
+            size="18"
+            class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+          />
+
+          <input
+            id="email"
+            type="email"
+            placeholder="Digite seu email..."
+            autocomplete="email"
+            [formField]="signinForm.email"
+            class="w-full rounded-xl border border-gray-200 bg-gray-50 py-3.5 pl-11 pr-4 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 hover:border-gray-300 focus:border-brand focus:bg-white focus:ring-4 focus:ring-brand/10"
+          />
+        </div>
+
+        <app-field-errors
+          [touched]="signinForm.email().touched()"
+          [errors]="signinForm.email().errors()"
+        />
+      </div>
+
+      <!-- Password field -->
+      <div class="flex flex-col gap-2">
+        <label for="password" class="text-sm font-semibold text-gray-700"> Senha </label>
+
+        <div class="relative">
+          <ng-icon
+            name="lucideLockKeyhole"
+            size="18"
+            class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+          />
+
+          <input
+            id="password"
+            [type]="passwordVisible() ? 'text' : 'password'"
+            [formField]="signinForm.password"
+            placeholder="Digite sua senha..."
+            autocomplete="current-password"
+            class="w-full rounded-xl border border-gray-200 bg-gray-50 py-3.5 pl-11 pr-12 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 hover:border-gray-300 focus:border-brand focus:bg-white focus:ring-4 focus:ring-brand/10"
+          />
+
+          <button
+            type="button"
+            (click)="togglePasswordVisibility()"
+            [attr.aria-label]="passwordVisible() ? 'Ocultar senha' : 'Mostrar senha'"
+            class="absolute inset-y-0 right-4 flex items-center justify-center text-gray-400 transition-colors hover:text-brand"
+          >
+            @if (passwordVisible()) {
+              <ng-icon name="lucideEyeOff" size="18" />
+            } @else {
+              <ng-icon name="lucideEye" size="18" />
+            }
+          </button>
+        </div>
+
+        <app-field-errors
+          [touched]="signinForm.password().touched()"
+          [errors]="signinForm.password().errors()"
+        />
+
+        <!-- Forgot password -->
+        <a
+          routerLink="/auth/forgot-password"
+          class="self-end text-sm font-semibold text-brand transition-colors hover:text-brand-2 hover:underline cursor-pointer"
+        >
+          Esqueceu a senha?
+        </a>
+      </div>
+    </fieldset>
+
+    <button
+      type="submit"
+      [disabled]="signinForm().submitting()"
+      class="mt-8 flex w-full items-center justify-center gap-2 rounded-xl bg-brand py-3.5 text-sm font-semibold text-white shadow-sm shadow-brand/20 transition-all hover:bg-brand/90 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-60"
+    >
+      @if (signinForm().submitting()) {
+        Entrando...
+      } @else {
+        Entrar
+        <ng-icon name="lucideArrowRight" size="18" />
+      }
+    </button>
+  </form>
+</section>
