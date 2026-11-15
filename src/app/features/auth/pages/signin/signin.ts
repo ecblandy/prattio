@@ -4,6 +4,7 @@ import { NgIcon } from '@ng-icons/core';
 
 import { signinValidators } from '../../../../shared/validators/auth.validators';
 import { FieldErrors } from '../../../../shared/components/field-errors/field-errors';
+import { RouterLink } from '@angular/router';
 
 export interface SigninModel {
   email: string;
@@ -12,7 +13,7 @@ export interface SigninModel {
 
 @Component({
   selector: 'app-signin',
-  imports: [NgIcon, FormField, FieldErrors],
+  imports: [NgIcon, FormField, FieldErrors, RouterLink],
   templateUrl: './signin.html',
   styleUrl: './signin.css',
 })

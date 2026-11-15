@@ -8,6 +8,11 @@ export const routes: Routes = [
         path: 'signin',
         loadComponent: () => import('./pages/signin/signin').then((m) => m.Signin),
       },
+      {
+        path: 'forgot-password',
+        loadComponent: () =>
+          import('./pages/forgot-password/forgot-password').then((m) => m.ForgotPassword),
+      },
       // Futuras rotas:
       // signup
       // forgot-password
