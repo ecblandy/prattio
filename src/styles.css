@@ -1,3 +1,16 @@
 /* You can add global styles to this file, and also import other style files */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
+@import 'tailwindcss';
 
-@import "tailwindcss";
+@theme {
+  /* Brand colors */
+  --color-brand: #491b6d;
+  --color-brand-2: #c983de;
+  --color-primary: #ffffff;
+  --color-primary-2: #000000;
+  --color-secondary: #4b4b4b;
+  --color-secondary-2: #d9d9d9;
+  --color-secondary-3: #e6e6e6;
+
+  --font-sans: 'Poppins', sans-serif;
+}
