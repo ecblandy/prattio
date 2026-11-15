@@ -13,6 +13,11 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./pages/forgot-password/forgot-password').then((m) => m.ForgotPassword),
       },
+
+      {
+        path: 'check-email',
+        loadComponent: () => import('./pages/check-email/check-email').then((m) => m.CheckEmail),
+      },
       // Futuras rotas:
       // signup
       // forgot-password

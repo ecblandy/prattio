@@ -10,6 +10,7 @@ import {
   lucideLogOut,
   lucideEye,
   lucideEyeOff,
+  lucideMailCheck,
 } from '@ng-icons/lucide';
 
 export const provideAppIcons = () =>
@@ -23,4 +24,5 @@ export const provideAppIcons = () =>
     lucideLogOut,
     lucideEye,
     lucideEyeOff,
+    lucideMailCheck,
   });
