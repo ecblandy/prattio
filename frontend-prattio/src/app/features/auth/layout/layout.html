@@ -1,0 +1,25 @@
+<main
+  class="relative flex min-h-svh w-full flex-col items-center justify-center px-6 py-8 sm:py-12"
+>
+  <app-theme-toggle class="absolute right-6 top-6" />
+
+  <div class="flex w-full max-w-sm flex-col items-center">
+    <div class="mb-8 flex justify-center sm:mb-10">
+      @if (theme.isCourierBrand()) {
+        <img
+          [src]="theme.isDark()
+            ? '/assets/images/prattio-motoboy-imagens-v2/escuro/icon.svg'
+            : '/assets/images/prattio-motoboy-imagens-v2/claro/icon.svg'"
+          alt="Prattio Motoboy"
+          width="112"
+          height="112"
+          class="block h-auto w-24 object-contain sm:w-28"
+        />
+      } @else {
+        <app-brand-logo />
+      }
+    </div>
+
+    <router-outlet />
+  </div>
+</main>

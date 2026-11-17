@@ -1,0 +1,11 @@
+@media (prefers-reduced-motion: no-preference) {
+  .signin-spinner {
+    animation: signin-spin 800ms linear infinite;
+  }
+}
+
+@keyframes signin-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

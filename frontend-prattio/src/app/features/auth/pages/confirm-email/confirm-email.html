@@ -1,0 +1,18 @@
+<section class="flex w-full max-w-sm flex-col items-center text-center">
+  @if (state() === 'loading') {
+    <ng-icon name="lucideLoaderCircle" size="32" class="motion-safe:animate-spin text-brand" aria-hidden="true" />
+    <h1 class="mt-4 text-2xl font-bold text-ink">Confirmando seu e-mail...</h1>
+    <p class="mt-2 text-sm text-muted" role="status">Aguarde um momento.</p>
+  } @else if (state() === 'success') {
+    <ng-icon name="lucideCircleCheck" size="32" class="text-brand" aria-hidden="true" />
+    <h1 class="mt-4 text-2xl font-bold text-ink">E-mail confirmado!</h1>
+    <p class="mt-2 text-sm text-muted" role="status">Sua conta está pronta para entrar.</p>
+    <a routerLink="/auth/signin" class="mt-8 w-full rounded-xl bg-brand px-4 py-3.5 text-sm font-semibold text-white hover:bg-brand/90">Ir para o login</a>
+  } @else {
+    <ng-icon name="lucideTriangleAlert" size="32" class="text-brand" aria-hidden="true" />
+    <h1 class="mt-4 text-2xl font-bold text-ink">Não foi possível confirmar</h1>
+    <p class="mt-2 text-sm text-muted" role="alert">{{ errorMessage() }}</p>
+    <a routerLink="/auth/resend-confirmation" class="mt-8 w-full rounded-xl bg-brand px-4 py-3.5 text-sm font-semibold text-white hover:bg-brand/90">Solicitar novo link</a>
+    <a routerLink="/auth/signin" class="mt-4 text-sm font-semibold text-brand hover:underline">Voltar para o login</a>
+  }
+</section>

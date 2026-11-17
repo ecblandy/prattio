@@ -1,0 +1,2318 @@
+<div class="min-h-svh bg-page text-ink">
+  <aside
+    class="fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-line bg-surface transition-transform duration-200 lg:translate-x-0"
+    [class.-translate-x-full]="!sidebarOpen()"
+    [class.translate-x-0]="sidebarOpen()"
+    aria-label="Navegação da loja"
+  >
+    <div class="flex h-16 items-center gap-3 border-b border-line px-5">
+      <img
+        [src]="
+          theme.isDark()
+            ? '/assets/images/prattio-logos/logo-horizontal-dark.svg'
+            : '/assets/images/prattio-logos/logo-horizontal.svg'
+        "
+        alt="Prattio"
+        width="140"
+        height="43"
+        class="h-9 w-auto max-w-36 object-contain object-left"
+      />
+      <button
+        type="button"
+        class="ml-auto rounded-md p-2 text-muted hover:bg-field hover:text-ink lg:hidden"
+        aria-label="Fechar menu"
+        (click)="sidebarOpen.set(false)"
+      >
+        <ng-icon name="lucideX" size="18" />
+      </button>
+    </div>
+
+    <div class="border-b border-line px-4 py-4">
+      <div class="flex items-center gap-3 rounded-xl border border-line bg-field p-3">
+        <span
+          class="flex size-9 shrink-0 items-center justify-center rounded-md bg-brand/10 text-brand"
+        >
+          <ng-icon name="lucideStore" size="18" />
+        </span>
+        <span class="min-w-0 flex-1">
+          <span class="block truncate text-sm font-semibold text-ink">{{ storeName() }}</span>
+          <span class="block truncate text-xs text-muted">Painel do restaurante</span>
+        </span>
+      </div>
+      <button
+        type="button"
+        class="mt-3 flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-xs font-medium transition-colors hover:bg-field"
+        [class.text-emerald-700]="storeOpen()"
+        [class.dark:text-emerald-300]="storeOpen()"
+        [class.text-muted]="!storeOpen()"
+        (click)="toggleStoreOpen()"
+      >
+        <span
+          class="size-2 rounded-full"
+          [class.bg-emerald-500]="storeOpen()"
+          [class.bg-muted]="!storeOpen()"
+        ></span>
+        {{ storeOpen() ? 'Loja aberta' : 'Loja pausada' }}
+        <span class="ml-auto text-muted">{{ storeOpen() ? 'Pausar' : 'Abrir' }}</span>
+      </button>
+    </div>
+
+    <nav class="flex-1 overflow-y-auto px-3 py-4">
+      @for (group of ['Operação', 'Gestão']; track group) {
+        <p class="mb-2 px-3 pt-2 text-[11px] font-semibold uppercase text-muted">{{ group }}</p>
+        <div class="mb-5 flex flex-col gap-1">
+          @for (item of navItems; track item.id) {
+            @if (item.group === group) {
+              <button
+                type="button"
+                class="sidebar-link flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-colors"
+                [attr.aria-current]="activeSection() === item.id ? 'page' : null"
+                [class.bg-brand/10]="activeSection() === item.id"
+                [class.text-brand]="activeSection() === item.id"
+                [class.text-muted]="activeSection() !== item.id"
+                [class.hover:bg-field]="activeSection() !== item.id"
+                (click)="selectSection(item.id)"
+              >
+                <ng-icon [name]="item.icon" size="18" class="shrink-0" />
+                <span class="flex-1">{{ item.label }}</span>
+                @if (item.id === 'orders' && newOrderCount() > 0) {
+                  <span
+                    class="rounded-full bg-brand px-2 py-0.5 text-[11px] font-semibold text-white"
+                  >
+                    {{ newOrderCount() }}
+                  </span>
+                }
+              </button>
+            }
+          }
+        </div>
+      }
+    </nav>
+
+    <div class="border-t border-line p-3">
+      <div class="flex items-center gap-3 rounded-lg p-2">
+        <span
+          class="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand/10 text-xs font-bold text-brand"
+        >
+          {{ accountInitials() }}
+        </span>
+        <span class="min-w-0 flex-1">
+          <span class="block truncate text-sm font-semibold text-ink">{{ accountName() }}</span>
+          <span class="block truncate text-xs text-muted">{{ signedInRestaurant() ? 'Conta de restaurante' : 'Visita demonstrativa' }}</span>
+        </span>
+        <a
+          routerLink="/auth/signin"
+          (click)="signOut()"
+          aria-label="Sair da conta"
+          title="Sair"
+          class="rounded-md p-2 text-muted transition-colors hover:bg-field hover:text-ink"
+        >
+          <ng-icon name="lucideLogOut" size="17" />
+        </a>
+      </div>
+    </div>
+  </aside>
+
+  @if (sidebarOpen()) {
+    <button
+      type="button"
+      class="fixed inset-0 z-40 bg-black/40 lg:hidden"
+      aria-label="Fechar menu"
+      (click)="sidebarOpen.set(false)"
+    ></button>
+  }
+
+  <div class="min-h-svh lg:pl-64">
+    <header
+      class="sticky top-0 z-30 flex h-16 items-center gap-2 border-b border-line bg-surface/95 px-3 backdrop-blur sm:gap-4 sm:px-6"
+    >
+      <button
+        type="button"
+        class="rounded-md p-2 text-muted hover:bg-field hover:text-ink lg:hidden"
+        aria-label="Abrir menu"
+        (click)="sidebarOpen.set(true)"
+      >
+        <ng-icon name="lucideMenu" size="20" />
+      </button>
+      <div class="min-w-0 flex-1">
+        <p class="hidden text-[10px] font-semibold uppercase tracking-wide text-muted sm:block">Painel do restaurante</p>
+        <p class="truncate text-sm font-semibold text-ink">{{ activePage().label }}</p>
+      </div>
+      @if (searchPlaceholder(); as placeholder) {
+        <label class="relative hidden w-full max-w-xs sm:block">
+          <ng-icon name="lucideSearch" size="17" class="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+          <input type="search" [value]="searchQuery()" (input)="searchQuery.set($any($event.target).value)"
+            [placeholder]="placeholder" [attr.aria-label]="placeholder"
+            class="h-10 w-full rounded-lg border border-line bg-field pl-9 pr-3 text-sm text-ink outline-none placeholder:text-muted focus:border-brand" />
+        </label>
+        <button type="button" class="rounded-lg border border-line p-2 text-muted hover:bg-field sm:hidden"
+          aria-label="Abrir busca" [attr.aria-expanded]="mobileSearchOpen()"
+          (click)="mobileSearchOpen.update((open) => !open)">
+          <ng-icon name="lucideSearch" size="18" />
+        </button>
+        @if (mobileSearchOpen()) {
+          <label class="absolute inset-x-3 top-full z-40 mt-2 sm:hidden">
+            <ng-icon name="lucideSearch" size="17" class="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+            <input type="search" [value]="searchQuery()" (input)="searchQuery.set($any($event.target).value)"
+              [placeholder]="placeholder" [attr.aria-label]="placeholder"
+              class="h-11 w-full rounded-lg border border-line bg-surface pl-9 pr-3 text-sm text-ink shadow-lg outline-none placeholder:text-muted focus:border-brand" />
+          </label>
+        }
+      }
+      <app-theme-toggle />
+      <button
+        type="button"
+        aria-label="Abrir configurações"
+        title="Configurações"
+        class="inline-flex shrink-0 items-center gap-2 rounded-lg border border-line bg-surface p-2 text-muted transition-colors hover:bg-field hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:px-3"
+        (click)="selectSection('settings')"
+      >
+        <ng-icon name="lucideSettings" size="18" aria-hidden="true" />
+        <span class="hidden text-sm font-semibold sm:inline">Configurações</span>
+      </button>
+    </header>
+
+    <main
+      class="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8"
+      [style.padding-top.px]="mobileSearchOpen() ? 80 : null"
+    >
+      <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p class="mb-1 text-xs font-medium capitalize text-muted">{{ currentDate }}</p>
+          <h1 #sectionTitle tabindex="-1" class="text-2xl font-bold text-ink">{{ activePage().label }}</h1>
+          <p class="mt-1 text-sm text-muted">{{ activePage().description }}</p>
+        </div>
+        @if (primaryAction(); as actionLabel) {
+          <button
+            type="button"
+            class="inline-flex h-10 items-center gap-2 rounded-lg bg-brand px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+            (click)="openPrimaryAction()"
+          >
+            <ng-icon name="lucidePlus" size="17" />
+            {{ actionLabel }}
+          </button>
+        }
+      </div>
+
+      @if (guideOpen()) {
+        <section
+          aria-labelledby="guide-title"
+          class="guide-card mb-6 overflow-hidden rounded-2xl border border-line bg-surface shadow-lg shadow-brand/5"
+        >
+          <div class="flex flex-col md:flex-row">
+            <div class="border-b border-line bg-brand/5 p-5 md:w-60 md:shrink-0 md:border-b-0 md:border-r">
+              <div class="flex items-center gap-3">
+                <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand text-white">
+                  <ng-icon name="lucideStore" size="19" aria-hidden="true" />
+                </span>
+                <div>
+                  <p class="text-xs font-semibold uppercase tracking-wide text-brand">Primeiros passos</p>
+                  <p class="mt-0.5 text-sm font-bold text-ink">Guia da sua loja</p>
+                </div>
+              </div>
+
+              <div class="mt-5">
+                <div class="flex items-center justify-between text-xs font-medium text-muted">
+                  <span>Etapas do guia</span>
+                  <span>{{ guideStep() + 1 }} / {{ guideSteps.length }}</span>
+                </div>
+                <div role="progressbar" aria-label="Etapa atual do guia" aria-valuemin="1"
+                  [attr.aria-valuemax]="guideSteps.length" [attr.aria-valuenow]="guideStep() + 1"
+                  class="mt-2 h-1.5 overflow-hidden rounded-full bg-line">
+                  <div class="guide-progress h-full rounded-full bg-brand"
+                    [style.width.%]="(guideStep() + 1) * 100 / guideSteps.length"></div>
+                </div>
+              </div>
+
+              <ol class="mt-4 grid grid-cols-5 gap-1 md:flex md:flex-col">
+                @for (step of guideSteps; track step.title; let index = $index) {
+                  <li>
+                    <button type="button" [disabled]="guideSaving()"
+                      [attr.aria-label]="'Ir para etapa ' + (index + 1) + ': ' + step.shortLabel"
+                      [attr.aria-current]="guideStep() === index ? 'step' : null"
+                      [class.bg-surface]="guideStep() === index"
+                      [class.text-ink]="guideStep() === index"
+                      [class.text-muted]="guideStep() !== index"
+                      (click)="guideStep.set(index)"
+                      class="flex w-full items-center justify-center gap-3 rounded-lg px-2 py-2 text-left text-xs font-semibold transition-colors hover:bg-surface/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:opacity-50 md:justify-start">
+                      <span class="flex size-7 shrink-0 items-center justify-center rounded-lg"
+                        [class.bg-brand]="guideStep() === index"
+                        [class.text-white]="guideStep() === index"
+                        [class.bg-line]="guideStep() !== index">
+                        {{ index + 1 }}
+                      </span>
+                      <span class="hidden md:block">{{ step.shortLabel }}</span>
+                    </button>
+                  </li>
+                }
+              </ol>
+            </div>
+
+            <div class="min-w-0 flex-1 p-5 sm:p-6">
+              <div class="flex items-center justify-between gap-3">
+                <span class="rounded-full bg-brand/10 px-3 py-1 text-xs font-semibold text-brand">
+                  Passo {{ guideStep() + 1 }} de {{ guideSteps.length }}
+                </span>
+                <button type="button" aria-label="Fechar guia inicial" [disabled]="guideSaving()"
+                  class="rounded-lg p-2 text-muted transition-colors hover:bg-field hover:text-ink focus-visible:outline-2 focus-visible:outline-brand disabled:opacity-50"
+                  (click)="guideOpen.set(false)">
+                  <ng-icon name="lucideX" size="18" aria-hidden="true" />
+                </button>
+              </div>
+
+              <div aria-live="polite">
+                @for (step of [guideSteps[guideStep()]]; track step.title) {
+                  <div class="guide-stage mt-4">
+                    <div class="flex items-start gap-4">
+                      <span class="flex size-12 shrink-0 items-center justify-center rounded-xl bg-brand/10 text-brand">
+                        <ng-icon [name]="step.icon" size="23" aria-hidden="true" />
+                      </span>
+                      <div>
+                        <h2 #guideTitle id="guide-title" tabindex="-1" class="text-xl font-bold tracking-tight text-ink sm:text-2xl">
+                          {{ step.title }}
+                        </h2>
+                        <p class="mt-1.5 max-w-xl text-sm leading-relaxed text-muted">{{ step.description }}</p>
+                      </div>
+                    </div>
+                    <div class="mt-5 rounded-xl border border-line bg-field/60 p-4">
+                      <p class="text-xs font-bold uppercase tracking-wide text-ink">O que você vai encontrar</p>
+                      <ul class="mt-3 space-y-2.5">
+                        @for (tip of step.tips; track tip) {
+                          <li class="flex items-start gap-2.5 text-sm text-muted">
+                            <ng-icon name="lucideCheck" size="16" class="mt-0.5 shrink-0 text-brand" aria-hidden="true" />
+                            <span>{{ tip }}</span>
+                          </li>
+                        }
+                      </ul>
+                    </div>
+                  </div>
+                }
+              </div>
+
+              <div class="mt-4 flex items-start gap-2.5 rounded-xl bg-brand/5 p-3 text-xs leading-relaxed text-muted">
+                <ng-icon name="lucideInfo" size="16" class="mt-0.5 shrink-0 text-brand" aria-hidden="true" />
+                <p>Este painel é demonstrativo: produtos, pedidos, entregas e integrações ainda não estão conectados à operação real da sua loja.</p>
+              </div>
+              @if (!signedInRestaurant()) {
+                <p class="mt-3 text-xs text-muted">Entre com uma conta de restaurante para salvar a conclusão do guia. <a routerLink="/auth/signin" class="font-semibold text-brand underline">Entrar</a></p>
+              }
+
+              <div class="mt-5 flex flex-wrap items-center gap-2">
+                <button type="button" [disabled]="guideSaving()" (click)="openGuideSection()"
+                  class="inline-flex items-center gap-2 rounded-lg border border-line px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-field focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:opacity-50">
+                  {{ guideSteps[guideStep()].action }}
+                  <ng-icon name="lucideArrowRight" size="15" aria-hidden="true" />
+                </button>
+                <div class="flex flex-wrap gap-2 sm:ml-auto">
+                  @if (guideStep() > 0) {
+                    <button type="button" [disabled]="guideSaving()" (click)="guideStep.update(step => step - 1)"
+                      class="rounded-lg px-4 py-2.5 text-sm font-semibold text-muted transition-colors hover:bg-field focus-visible:outline-2 focus-visible:outline-brand disabled:opacity-50">
+                      Voltar
+                    </button>
+                  }
+                  @if (guideStep() < guideSteps.length - 1) {
+                    <button type="button" (click)="guideStep.update(step => step + 1)"
+                      class="rounded-lg bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand/20 transition-all hover:bg-brand/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand motion-safe:hover:-translate-y-0.5">
+                      Próximo
+                    </button>
+                  } @else {
+                    <button type="button" [disabled]="guideSaving()" [attr.aria-busy]="guideSaving()" (click)="finishGuide()"
+                      class="inline-flex items-center gap-2 rounded-lg bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand/20 transition-all hover:bg-brand/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-60">
+                      @if (guideSaving()) {
+                        <ng-icon name="lucideLoaderCircle" size="16" class="motion-safe:animate-spin" aria-hidden="true" />
+                        Salvando...
+                      } @else {
+                        Concluir guia
+                      }
+                    </button>
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      }
+
+      @if (guideMinimized() && !guideOpen()) {
+        <div class="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-surface px-4 py-3" aria-label="Guia inicial em andamento">
+          <p class="text-sm text-muted">Guia inicial · etapa {{ guideStep() + 1 }} de {{ guideSteps.length }}: <strong class="text-ink">{{ guideSteps[guideStep()].shortLabel }}</strong></p>
+          <div class="flex items-center gap-2">
+            <button type="button" (click)="openGuide()" class="rounded-lg px-3 py-2 text-sm font-semibold text-brand hover:bg-field focus-visible:outline-2 focus-visible:outline-brand">Retomar guia</button>
+            <button type="button" (click)="guideMinimized.set(false)" aria-label="Ocultar lembrete do guia" class="rounded-lg p-2 text-muted hover:bg-field focus-visible:outline-2 focus-visible:outline-brand"><ng-icon name="lucideX" size="17" aria-hidden="true" /></button>
+          </div>
+        </div>
+      }
+
+      <details class="mb-6 rounded-lg border border-line bg-surface px-4 py-3 text-sm">
+        <summary class="cursor-pointer font-semibold text-ink focus-visible:outline-2 focus-visible:outline-brand">
+          Ajuda: {{ activePage().label }}
+        </summary>
+        <p class="mt-2 leading-relaxed text-muted">{{ sectionHelp[activeSection()] }}</p>
+        <p class="mt-2 text-xs text-muted">As informações e ações do painel são demonstrativas.</p>
+      </details>
+
+      @if (activeSection() === 'overview') {
+        <section class="overview space-y-5" aria-label="Resumo da operação">
+          <div class="overview-hero rounded-2xl p-5 sm:p-7">
+            <div class="relative flex flex-wrap items-end justify-between gap-5">
+              <div class="max-w-xl">
+                <p class="overview-eyebrow">CENTRAL DE OPERAÇÕES <span>·</span> DEMONSTRAÇÃO</p>
+                <h2 class="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">Sua operação, em um só lugar.</h2>
+                <p class="mt-2 text-sm leading-relaxed text-muted">Acompanhe a fila, identifique prioridades e mantenha sua equipe em movimento.</p>
+              </div>
+              <div class="overview-hero-status">
+                <span class="overview-status-dot" [class.overview-status-paused]="!storeOpen()"></span>
+                {{ storeOpen() ? 'Loja aberta' : 'Loja pausada' }}
+              </div>
+            </div>
+          </div>
+
+          <div class="overview-notice rounded-xl border border-line bg-surface px-4 py-3 text-sm text-muted">
+            <strong class="text-ink">Ambiente demonstrativo.</strong> Pedidos, alertas e entregadores são exemplos locais; não representam a operação real.
+          </div>
+
+          <div class="overview-metrics grid gap-3 sm:grid-cols-2 2xl:grid-cols-4">
+            <article class="overview-card rounded-xl border border-line bg-surface p-5">
+              <div class="flex items-center justify-between gap-2"><p class="text-sm font-medium text-muted">Em operação</p><span class="overview-icon"><ng-icon name="lucideShoppingBag" size="18" /></span></div>
+              <p class="mt-4 text-3xl font-semibold tracking-tight text-ink">{{ activeOrderCount() }}</p>
+              <p class="mt-1 text-xs text-muted">Pedidos ainda não finalizados</p>
+            </article>
+            <article class="overview-card overview-card-alert rounded-xl border border-line bg-surface p-5">
+              <div class="flex items-center justify-between gap-2"><p class="text-sm font-medium text-muted">Preparo atrasado</p><span class="overview-icon overview-icon-alert"><ng-icon name="lucideClock" size="18" /></span></div>
+              <p class="mt-4 text-3xl font-semibold tracking-tight text-ink">{{ latePreparationOrders().length }}</p>
+              <p class="mt-1 text-xs text-muted">No limite de {{ prepSlaMinutes() }} min ou acima</p>
+            </article>
+            <article class="overview-card rounded-xl border border-line bg-surface p-5">
+              <div class="flex items-center justify-between gap-2"><p class="text-sm font-medium text-muted">Solicitações</p><span class="overview-icon"><ng-icon name="lucideShoppingBag" size="18" /></span></div>
+              <p class="mt-4 text-3xl font-semibold tracking-tight text-ink">{{ requestCount() }}</p>
+              <p class="mt-1 text-xs text-muted">Cancelamento ou reembolso</p>
+            </article>
+            <article class="overview-card rounded-xl border border-line bg-surface p-5">
+              <div class="flex items-center justify-between gap-2"><p class="text-sm font-medium text-muted">Equipe online</p><span class="overview-icon"><ng-icon name="lucideBike" size="18" /></span></div>
+              <p class="mt-4 text-3xl font-semibold tracking-tight text-ink">{{ onlineCourierCount() }}</p>
+              <p class="mt-1 text-xs text-muted">Entregadores ativos e online</p>
+            </article>
+          </div>
+
+          <div class="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
+            <section class="overview-panel rounded-xl border border-line bg-surface p-5 sm:p-6" aria-labelledby="overview-priority-title">
+              <div class="flex flex-wrap items-start justify-between gap-3">
+                <div><p class="overview-kicker">ATENÇÃO À COZINHA</p><h2 id="overview-priority-title" class="mt-1 text-lg font-semibold text-ink">Prioridades do preparo</h2></div>
+                <span class="overview-chip">{{ warningPreparationCount() }} {{ warningPreparationCount() === 1 ? 'próximo do limite' : 'próximos do limite' }}</span>
+              </div>
+              <p class="mt-2 text-sm leading-relaxed text-muted">Limite configurado: {{ prepSlaMinutes() }} min. Contamos a espera para iniciar ou o tempo desde o início do preparo, conforme o painel TV. Não é um prazo de entrega.</p>
+              @if (latePreparationOrders().length) {
+                <div class="mt-5 space-y-2">
+                  @for (entry of latePreparationOrders(); track entry.order.id) {
+                    <div class="overview-alert-row flex flex-wrap items-center justify-between gap-2 rounded-lg px-4 py-3">
+                      <div><strong class="text-sm text-ink">#{{ entry.order.id }} · {{ entry.order.customer }}</strong><p class="mt-1 text-xs text-muted">{{ entry.order.channel }} · {{ entry.order.status }}</p></div>
+                      <span class="overview-alert-label">Limite atingido</span>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <div class="overview-empty mt-5 rounded-xl p-5">
+                  <strong class="text-sm text-ink">Nenhum atraso identificado</strong>
+                  <p class="mt-1 text-xs leading-relaxed text-muted">Os pedidos monitorados aparecerão aqui ao atingir o prazo configurado.</p>
+                </div>
+              }
+              @if (unknownPreparationCount()) {
+                <p class="mt-3 text-xs leading-relaxed text-muted">{{ unknownPreparationCount() }} {{ unknownPreparationCount() === 1 ? 'pedido sem avaliação' : 'pedidos sem avaliação' }}: agendados ou sem horário válido para medir.</p>
+              }
+              <p class="mt-3 text-xs leading-relaxed text-muted">Pedidos agendados não são avaliados neste indicador. Atualização a cada 30 segundos.</p>
+              <button type="button" class="overview-link mt-4" (click)="openOverviewOrders()">Abrir central de pedidos <ng-icon name="lucideArrowRight" size="15" /></button>
+            </section>
+
+            <section class="overview-panel rounded-xl border border-line bg-surface p-5 sm:p-6" aria-labelledby="overview-flow-title">
+              <div class="flex items-start justify-between gap-3">
+                <div><p class="overview-kicker">VISÃO DA FILA</p><h2 id="overview-flow-title" class="mt-1 text-lg font-semibold text-ink">Fluxo de pedidos</h2><p class="mt-1 text-xs text-muted">Distribuição dos pedidos não finalizados</p></div>
+                <span class="overview-flow-total">{{ activeOrderCount() }} <small>ativos</small></span>
+              </div>
+              <div class="mt-6 space-y-4">
+                @for (stage of overviewFlow(); track stage.label) {
+                  <div>
+                    <div class="flex justify-between gap-3 text-sm"><span class="text-muted">{{ stage.label }}</span><strong class="text-ink">{{ stage.count }}</strong></div>
+                    <div class="overview-track mt-2" aria-hidden="true"><div class="overview-fill" [attr.data-stage]="stage.color" [style.width.%]="activeOrderCount() ? stage.count * 100 / activeOrderCount() : 0"></div></div>
+                  </div>
+                }
+              </div>
+              <button type="button" class="overview-link mt-6" (click)="selectSection('couriers')">Ver entregadores <ng-icon name="lucideArrowRight" size="15" /></button>
+            </section>
+          </div>
+
+          <section class="overview-panel overflow-hidden rounded-xl border border-line bg-surface" aria-labelledby="overview-recent-title">
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-5 sm:px-6">
+              <div><p class="overview-kicker">ACOMPANHAMENTO</p><h2 id="overview-recent-title" class="mt-1 text-lg font-semibold text-ink">Pedidos recentes</h2><p class="mt-1 text-xs text-muted">Últimos pedidos recebidos na demonstração</p></div>
+              <button type="button" class="overview-link" (click)="openOverviewOrders()">Ver todos <ng-icon name="lucideArrowRight" size="15" /></button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full min-w-170 text-left text-sm">
+                <thead class="bg-field text-xs font-semibold uppercase text-muted"><tr><th class="px-5 py-3">Pedido</th><th class="px-5 py-3">Cliente</th><th class="px-5 py-3">Canal</th><th class="px-5 py-3">Valor</th><th class="px-5 py-3">Status</th></tr></thead>
+                <tbody class="divide-y divide-line">
+                  @for (order of recentOrders(); track order.id) {
+                    <tr class="hover:bg-field/70">
+                      <td class="px-5 py-3.5 font-semibold text-ink">#{{ order.id }}</td>
+                      <td class="px-5 py-3.5 text-ink">{{ order.customer }}<span class="mt-0.5 block text-xs text-muted">{{ order.items }}</span></td>
+                      <td class="px-5 py-3.5 text-muted">{{ order.channel }}</td>
+                      <td class="px-5 py-3.5 font-semibold text-ink">{{ formatCurrency(order.total) }}</td>
+                      <td class="px-5 py-3.5"><span class="rounded-full px-2.5 py-1 text-xs font-semibold" [class]="orderStatusClass(order.status)">{{ order.status }}</span></td>
+                    </tr>
+                  } @empty {
+                    <tr><td colspan="5" class="px-5 py-10 text-center text-sm text-muted">Nenhum pedido na demonstração.</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+      } @else if (activeSection() === 'orders') {
+        <section class="workspace-intro mb-5 rounded-2xl p-5 sm:p-6" aria-label="Resumo de pedidos">
+          <div class="workspace-intro-content">
+            <p class="workspace-eyebrow">OPERAÇÃO · PEDIDOS</p>
+            <h2 class="mt-2 text-xl font-bold sm:text-2xl">Cada pedido, no tempo certo.</h2>
+            <p class="mt-2 max-w-2xl text-sm leading-relaxed">Acompanhe o preparo, organize o despacho e encontre o que precisa de atenção.</p>
+            <p class="mt-3 text-xs">Dados demonstrativos · alterações válidas somente nesta sessão</p>
+            <div class="workspace-stats mt-5">
+              <div><div><strong>{{ activeOrderCount() }}</strong><span>em andamento</span></div><ng-icon name="lucideShoppingBag" size="19" aria-hidden="true" /></div>
+              <div><div><strong>{{ newOrderCount() }}</strong><span>novos</span></div><ng-icon name="lucidePlus" size="19" aria-hidden="true" /></div>
+              <div><div><strong>{{ latePreparationOrders().length }}</strong><span>com preparo atrasado</span></div><ng-icon name="lucideClock" size="19" aria-hidden="true" /></div>
+              <div><div><strong>{{ requestCount() }}</strong><span>solicitações</span></div><ng-icon name="lucideBell" size="19" aria-hidden="true" /></div>
+            </div>
+          </div>
+        </section>
+        <section class="workspace-panel overflow-hidden rounded-2xl border border-line bg-surface">
+          <div
+            class="flex flex-wrap items-center justify-between gap-4 border-b border-line px-5 py-4"
+          >
+            <div>
+              <h2 class="text-base font-semibold text-ink">Central de pedidos</h2>
+              <p class="mt-1 text-xs text-muted">
+                {{ filteredOrders().length }} pedidos na visualização
+              </p>
+            </div>
+            <div class="flex max-w-full gap-1 overflow-x-auto rounded-lg bg-field p-1">
+              @for (filter of orderChannelFilters; track filter) {
+                <button
+                  type="button"
+                  class="whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium transition-colors"
+                  [class.bg-surface]="orderChannelFilter() === filter"
+                  [class.text-ink]="orderChannelFilter() === filter"
+                  [class.shadow-sm]="orderChannelFilter() === filter"
+                  [class.text-muted]="orderChannelFilter() !== filter"
+                  (click)="orderChannelFilter.set(filter)"
+                >
+                  {{ filter }}
+                </button>
+              }
+            </div>
+            <select
+              [value]="orderFilter()"
+              (change)="orderFilter.set($any($event.target).value)"
+              aria-label="Filtrar status dos pedidos"
+              class="h-9 rounded-md border border-line bg-surface px-2.5 text-xs text-ink outline-none focus:border-brand"
+            >
+              @for (filter of orderFilters; track filter) {
+                <option [value]="filter">{{ filter }}</option>
+              }
+            </select>
+            <a
+              [routerLink]="['/restaurant/tv', tvAccessCode()]"
+              target="_blank"
+              rel="noopener"
+              class="inline-flex h-9 items-center gap-2 rounded-md border border-line px-3 text-xs font-semibold text-ink hover:bg-field"
+              ><ng-icon name="lucideTv" size="15" /> Abrir TV</a
+            >
+          </div>
+          <details class="border-b border-line px-5 py-3">
+            <summary class="cursor-pointer text-sm font-semibold text-ink focus-visible:outline-2 focus-visible:outline-brand">Mais filtros</summary>
+            <div class="mt-3 flex flex-wrap gap-2">
+            <select
+              [value]="orderFulfillmentFilter()"
+              (change)="orderFulfillmentFilter.set($any($event.target).value)"
+              aria-label="Filtrar modalidade"
+              class="h-9 rounded-md border border-line bg-surface px-2.5 text-xs text-ink"
+            >
+              <option value="Todos">Todas modalidades</option>
+              <option value="delivery">Entrega</option>
+              <option value="pickup">Retirada</option>
+            </select>
+            <select
+              [value]="orderCourierFilter()"
+              (change)="orderCourierFilter.set($any($event.target).value)"
+              aria-label="Filtrar entregador"
+              class="h-9 max-w-40 rounded-md border border-line bg-surface px-2.5 text-xs text-ink"
+            >
+              <option value="Todos">Todos entregadores</option>
+              @for (courier of couriers(); track courier.id) {
+                <option [value]="courier.id">{{ courier.name }}</option>
+              }
+            </select>
+            <select
+              [value]="orderPeriodFilter()"
+              (change)="orderPeriodFilter.set($any($event.target).value)"
+              aria-label="Filtrar período"
+              class="h-9 rounded-md border border-line bg-surface px-2.5 text-xs text-ink"
+            >
+              <option>24 horas</option>
+              <option>7 dias</option>
+              <option>Todos</option>
+            </select>
+            </div>
+          </details>
+          <details class="border-b border-line">
+            <summary class="cursor-pointer px-5 py-3 text-sm font-semibold text-ink focus-visible:outline-2 focus-visible:outline-brand">Configurações de despacho e TV</summary>
+          <div
+            class="flex flex-wrap items-center justify-between gap-3 border-b border-line bg-field/60 px-5 py-3"
+          >
+            <div>
+              <p class="text-xs font-semibold text-ink">Despacho da loja própria</p>
+              <p class="mt-0.5 text-xs text-muted">
+                {{ eligibleStoreCourierCount() }} motoboys próprios disponíveis na loja · FIFO por
+                início de turno
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              [attr.aria-checked]="allowExternalCourier()"
+              class="inline-flex min-h-11 items-center gap-2 rounded text-xs font-medium text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+              (click)="allowExternalCourier.update((enabled) => !enabled)"
+            >
+              <span
+                class="relative h-5 w-9 shrink-0 rounded-full"
+                aria-hidden="true"
+                [class.bg-brand-2]="allowExternalCourier()"
+                [class.bg-line]="!allowExternalCourier()"
+              >
+                <span
+                  class="absolute left-0.5 top-0.5 size-4 rounded-full bg-white shadow transition-transform"
+                  [class.translate-x-4]="allowExternalCourier()"
+                ></span>
+              </span>
+              Aceitar entregador parceiro
+            </button>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 border-b border-line px-5 py-2.5">
+            <label class="text-xs font-semibold text-muted" for="external-courier-target"
+              >Avulso</label
+            >
+            <select
+              id="external-courier-target"
+              [value]="externalCourierTargetId()"
+              (change)="externalCourierTargetId.set($any($event.target).value)"
+              class="h-8 rounded-md border border-line bg-surface px-2 text-xs text-ink"
+            >
+              <option value="nearby">Mais próximo disponível</option>
+              <option value="broadcast">Enviar para todos online</option>
+              @for (courier of externalCouriers(); track courier.id) {
+                <option [value]="courier.id">
+                  {{ courier.id }} · {{ courier.name }} · ~{{ courier.approximateDistanceKm }} km
+                  (demo)
+                </option>
+              }
+            </select>
+            <input
+              aria-label="ID de motoboy avulso"
+              [value]="externalCourierTargetId().startsWith('AV-') ? externalCourierTargetId() : ''"
+              (input)="externalCourierTargetId.set($any($event.target).value)"
+              placeholder="ou digite ID"
+              class="h-8 w-28 rounded-md border border-line bg-surface px-2 text-xs text-ink"
+            />
+          </div>
+          <div
+            class="flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-line px-5 py-2.5 text-xs text-muted"
+          >
+            <span
+              >Fila circular:
+              {{ couriers().filter(courier => courier.active).map(courier => courier.name).join(' → ') || 'sem entregadores ativos' }}</span
+            >
+            <label class="inline-flex items-center gap-2"
+              >Limite de itens por courier
+              <input
+                type="number"
+                min="1"
+                [value]="maxItemsPerCourier()"
+                (change)="setMaxItemsPerCourier($any($event.target).value)"
+                class="h-7 w-14 rounded border border-line bg-surface px-2 text-xs text-ink"
+            /></label>
+            <label class="inline-flex items-center gap-2"
+              >Alerta de preparo (min)
+              <input
+                type="number"
+                min="1"
+                [value]="prepSlaMinutes()"
+                (change)="setPrepSla($any($event.target).value)"
+                class="h-7 w-14 rounded border border-line bg-surface px-2 text-xs text-ink"
+            /></label>
+            <label class="inline-flex items-center gap-1.5"
+              >Novo
+              <input
+                type="color"
+                [value]="tvStatusColors().new"
+                (input)="setTvStatusColor('new', $any($event.target).value)"
+                class="size-6 cursor-pointer rounded border-0 bg-transparent"
+            /></label>
+            <label class="inline-flex items-center gap-1.5"
+              >Preparo
+              <input
+                type="color"
+                [value]="tvStatusColors().prep"
+                (input)="setTvStatusColor('prep', $any($event.target).value)"
+                class="size-6 cursor-pointer rounded border-0 bg-transparent"
+            /></label>
+            <label class="inline-flex items-center gap-1.5"
+              >Pronto
+              <input
+                type="color"
+                [value]="tvStatusColors().ready"
+                (input)="setTvStatusColor('ready', $any($event.target).value)"
+                class="size-6 cursor-pointer rounded border-0 bg-transparent"
+            /></label>
+            <label class="inline-flex items-center gap-1.5"
+              >Atenção
+              <input
+                type="color"
+                [value]="tvStatusColors().issue"
+                (input)="setTvStatusColor('issue', $any($event.target).value)"
+                class="size-6 cursor-pointer rounded border-0 bg-transparent"
+            /></label>
+          </div>
+          </details>
+          <div class="grid gap-3 p-3 lg:grid-cols-2 2xl:grid-cols-3">
+            @for (order of filteredOrders(); track order.id) {
+              <article class="rounded-lg border border-line bg-surface p-3.5">
+                <div class="flex items-start justify-between gap-3">
+                  <div>
+                    <p class="text-xs font-semibold text-muted">
+                      #{{ order.id }} · {{ order.time }}
+                    </p>
+                    <h3 class="mt-1 text-sm font-semibold text-ink">{{ order.customer }}</h3>
+                    <p class="mt-0.5 text-xs text-muted">{{ order.items }}</p>
+                  </div>
+                  <span
+                    class="rounded-full px-2 py-1 text-[11px] font-semibold"
+                    [class]="orderStatusClass(order.status)"
+                    >{{ order.status }}</span
+                  >
+                </div>
+                <div class="mt-3 flex items-center justify-between gap-3">
+                  <span class="rounded-md bg-field px-2 py-1 text-xs font-semibold">{{
+                    order.channel
+                  }}</span
+                  ><span class="text-sm font-bold text-ink">{{ formatCurrency(order.total) }}</span>
+                </div>
+                <details class="mt-3 border-t border-line pt-3">
+                  <summary class="cursor-pointer text-sm font-semibold text-brand focus-visible:outline-2 focus-visible:outline-brand">Detalhes e ações</summary>
+                <div class="mt-3 grid gap-2 sm:grid-cols-2">
+                  <select
+                    [value]="order.status"
+                    (change)="updateOrderStatus(order.id, $any($event.target).value)"
+                    aria-label="Atualizar status"
+                    class="h-9 min-w-0 rounded-md border border-line bg-field px-2 text-xs text-ink"
+                  >
+                    @for (status of orderStatuses; track status) {
+                      <option [value]="status" [selected]="status === order.status">{{ status }}</option>
+                    }
+                  </select>
+                  @if (order.channel === 'Loja própria') {
+                    <select
+                      [value]="order.courierId ?? ''"
+                      (change)="assignCourier(order.id, $any($event.target).value)"
+                      aria-label="Entregador da loja"
+                      class="h-9 min-w-0 rounded-md border border-line bg-field px-2 text-xs text-ink"
+                    >
+                      <option value="" [selected]="!order.courierId">Atribuir entregador online</option>
+                      @for (courier of couriers(); track courier.id) {
+                        @if (courier.active && courier.online) {
+                          <option [value]="courier.id" [selected]="courier.id === order.courierId">{{ courier.name }}</option>
+                        }
+                      }
+                      @if (order.courierId && !courierIsOnline(order.courierId)) {
+                        <option [value]="order.courierId" [selected]="true">{{ courierName(order.courierId) }} · offline</option>
+                      }
+                    </select>
+                    @if (!order.courierId) {
+                    <button
+                      type="button"
+                      class="h-9 rounded-md bg-brand px-2 text-xs font-semibold text-white"
+                      (click)="assignNextCourier(order.id)"
+                    >
+                      Próximo da fila
+                    </button>
+                    @if (order.externalDispatch === 'available') {
+                      <button
+                        type="button"
+                        class="h-9 rounded-md border border-line px-2 text-xs font-semibold text-brand"
+                        (click)="acceptExternalDispatch(order.id)"
+                      >
+                        Parceiro: simular aceite
+                      </button>
+                    } @else if (order.externalDispatch === 'accepted') {
+                      <span
+                        class="flex items-center text-xs font-semibold text-emerald-700 dark:text-emerald-300"
+                        >Parceiro aceitou</span
+                      >
+                    } @else if (onlineCourierCount() === 0 && allowExternalCourier()) {
+                      <button
+                        type="button"
+                        class="h-9 rounded-md border border-line px-2 text-xs font-semibold text-brand"
+                        (click)="openExternalDispatch(order.id)"
+                      >
+                        Chamar parceiro externo
+                      </button>
+                    }
+                    }
+                  } @else {
+                    <span class="flex items-center text-xs text-muted"
+                      >Entrega {{ order.channel }}</span
+                    >
+                  }
+                </div>
+                @if (order.address) {
+                  <p class="mt-2 text-xs leading-relaxed text-muted">
+                    {{ order.address }} · {{ order.phone }}
+                  </p>
+                }
+                <details class="mt-3 border-t border-line pt-2">
+                  <summary class="cursor-pointer text-xs font-semibold text-brand">
+                    Timeline · {{ waitingMinutes(order.receivedAt) }} min na operação
+                  </summary>
+                  <div class="mt-2 space-y-2 pl-2">
+                    @for (event of eventsForOrder(order.id); track event.id) {
+                      <p class="border-l-2 border-brand/40 pl-2 text-xs text-muted">
+                        <strong class="text-ink">{{ event.type }}</strong> · {{ event.actor }} ·
+                        {{ event.occurredAt | date: 'HH:mm:ss' }}
+                      </p>
+                    } @empty {
+                      <p class="text-xs text-muted">Histórico anterior à sessão indisponível.</p>
+                    }
+                  </div>
+                </details>
+                @if (order.status === 'Cancelamento solicitado' || order.status === 'Reembolso solicitado') {
+                  <div class="mt-3 flex flex-wrap gap-2">
+                    <button type="button" class="rounded-lg border border-line px-3 py-2 text-xs font-semibold text-ink" (click)="resolveOrderRequest(order.id, false)">Recusar solicitação</button>
+                    <button type="button" class="rounded-lg bg-brand px-3 py-2 text-xs font-semibold text-white" (click)="resolveOrderRequest(order.id, true)">Aceitar solicitação</button>
+                  </div>
+                }
+                <button type="button" [attr.aria-label]="'Remover pedido #' + order.id" class="mt-3 rounded-lg px-2 py-2 text-xs font-semibold text-red-600 hover:bg-field" (click)="deleteOrder(order.id)">Remover pedido</button>
+                </details>
+              </article>
+            } @empty {
+              <p class="py-8 text-center text-sm text-muted">Nenhum pedido nesta visualização.</p>
+            }
+          </div>
+        </section>
+      } @else if (activeSection() === 'menu') {
+        <section class="workspace-intro mb-5 rounded-2xl p-5 sm:p-6" aria-label="Resumo do cardápio">
+          <div class="workspace-intro-content">
+            <p class="workspace-eyebrow">OPERAÇÃO · CARDÁPIO</p>
+            <h2 class="mt-2 text-xl font-bold sm:text-2xl">Seu cardápio, do seu jeito.</h2>
+            <p class="mt-2 max-w-2xl text-sm leading-relaxed">Organize produtos, preços e disponibilidade em cada canal de venda.</p>
+            <p class="mt-3 text-xs">Dados demonstrativos · alterações válidas somente nesta sessão</p>
+            <div class="workspace-stats mt-5">
+              <div><div><strong>{{ menuItems().length }}</strong><span>itens cadastrados</span></div><ng-icon name="lucideUtensils" size="19" aria-hidden="true" /></div>
+              <div><div><strong>{{ availableMenuCount() }}</strong><span>em pelo menos um canal</span></div><ng-icon name="lucideCircleCheck" size="19" aria-hidden="true" /></div>
+              <div><div><strong>{{ menuItems().length - availableMenuCount() }}</strong><span>pausados em todos os canais</span></div><ng-icon name="lucideMinus" size="19" aria-hidden="true" /></div>
+            </div>
+          </div>
+        </section>
+        <section class="workspace-panel overflow-hidden rounded-2xl border border-line bg-surface">
+          <div
+            class="flex flex-wrap items-center justify-between gap-4 border-b border-line px-5 py-4"
+          >
+            <div>
+              <h2 class="text-base font-semibold text-ink">Itens do cardápio</h2>
+              <p class="mt-1 text-xs text-muted">
+                {{ availableMenuCount() }} disponíveis · {{ menuItems().length }} cadastrados
+              </p>
+            </div>
+            <a
+              routerLink="/loja/casa-do-patio"
+              class="inline-flex h-9 items-center gap-2 rounded-md border border-line px-3 text-xs font-semibold text-ink hover:bg-field"
+            >
+              <ng-icon name="lucideArrowUpRight" size="15" /> Ver cardápio da loja
+            </a>
+            <div class="flex flex-wrap gap-1 rounded-lg bg-field p-1">
+              @for (category of menuCategories; track category) {
+                <button
+                  type="button"
+                  class="rounded-md px-3 py-1.5 text-xs font-medium"
+                  [class.bg-surface]="menuCategory() === category"
+                  [class.text-ink]="menuCategory() === category"
+                  [class.shadow-sm]="menuCategory() === category"
+                  [class.text-muted]="menuCategory() !== category"
+                  (click)="menuCategory.set(category)"
+                >
+                  {{ category }}
+                </button>
+              }
+            </div>
+          </div>
+          <div class="grid gap-3 p-3 md:hidden">
+            @for (item of filteredMenuItems(); track item.id) {
+              <article class="rounded-xl border border-line p-4">
+                <div class="flex items-start gap-3">
+                  @if (item.imageUrl) {
+                    <img [src]="item.imageUrl" [alt]="item.name" class="size-12 shrink-0 rounded-lg border border-line object-cover" />
+                  } @else {
+                    <span class="flex size-12 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand"><ng-icon name="lucideUtensils" size="19" /></span>
+                  }
+                  <div class="min-w-0 flex-1">
+                    <h3 class="break-words text-sm font-bold text-ink">{{ item.name }}</h3>
+                    <p class="mt-1 text-xs text-muted">{{ item.category }} · Código {{ 1000 + item.id }} · {{ item.soldToday }} vendas hoje (demo)</p>
+                  </div>
+                  <button type="button" [attr.aria-label]="'Editar ' + item.name" class="rounded-lg p-2 text-muted hover:bg-field" (click)="openMenuDialog(item)"><ng-icon name="lucidePencil" size="16" /></button>
+                  <button type="button" [attr.aria-label]="'Remover ' + item.name" class="rounded-lg p-2 text-muted hover:bg-field" (click)="deleteMenuItem(item.id)"><ng-icon name="lucideTrash2" size="16" /></button>
+                </div>
+                <div class="mt-4 space-y-2 border-t border-line pt-3">
+                  @for (channel of menuChannels; track channel) {
+                    <div class="flex items-center justify-between gap-2 text-xs">
+                      <span class="font-medium text-muted">{{ channel }} · <strong class="text-ink">{{ formatCurrency(item.channels[channel].price) }}</strong></span>
+                      <button type="button" class="rounded-full bg-field px-3 py-1 font-semibold text-ink" [attr.aria-label]="(item.channels[channel].available ? 'Pausar' : 'Ativar') + ' ' + item.name + ' em ' + channel" (click)="toggleMenuAvailability(item.id, channel)">{{ item.channels[channel].available ? 'Ativo' : 'Pausado' }}</button>
+                    </div>
+                  }
+                </div>
+              </article>
+            } @empty {
+              <p class="py-8 text-center text-sm text-muted">Nenhum item encontrado. Ajuste a busca ou a categoria.</p>
+            }
+          </div>
+          <div class="hidden overflow-x-auto md:block">
+            <table class="w-full min-w-190 text-left text-sm">
+              <thead class="bg-field text-xs font-semibold uppercase text-muted">
+                <tr>
+                  <th class="px-5 py-3">Item</th>
+                  <th class="px-5 py-3">Categoria</th>
+                  <th class="px-5 py-3">Vendas hoje</th>
+                  @for (channel of menuChannels; track channel) {
+                    <th class="px-5 py-3">{{ channel }}</th>
+                  }
+                  <th class="px-5 py-3 text-right">Ações</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-line">
+                @for (item of filteredMenuItems(); track item.id) {
+                  <tr class="hover:bg-field/70">
+                    <td class="px-5 py-3.5">
+                      <div class="flex min-w-44 items-center gap-3">
+                        @if (item.imageUrl) {
+                          <img
+                            [src]="item.imageUrl"
+                            [alt]="item.name"
+                            class="size-11 rounded-md border border-line object-cover"
+                          />
+                        } @else {
+                          <span
+                            class="flex size-11 shrink-0 items-center justify-center rounded-md bg-brand/10 text-brand"
+                            ><ng-icon name="lucideUtensils" size="17"
+                          /></span>
+                        }
+                        <span class="min-w-0"
+                          ><span class="block font-semibold text-ink">{{ item.name }}</span
+                          ><span class="mt-1 block text-xs text-muted"
+                            >Código {{ 1000 + item.id }}</span
+                          ></span
+                        >
+                      </div>
+                    </td>
+                    <td class="px-5 py-3.5 text-muted">{{ item.category }}</td>
+                    <td class="px-5 py-3.5 text-ink">{{ item.soldToday }}</td>
+                    @for (channel of menuChannels; track channel) {
+                      <td class="px-5 py-3.5">
+                        <span class="block whitespace-nowrap font-semibold text-ink">{{
+                          formatCurrency(item.channels[channel].price)
+                        }}</span>
+                        <button
+                          type="button"
+                          class="mt-1 rounded-full px-2 py-0.5 text-[11px] font-semibold"
+                          [class.bg-emerald-100]="item.channels[channel].available"
+                          [class.text-emerald-800]="item.channels[channel].available"
+                          [class.dark:bg-emerald-950/50]="item.channels[channel].available"
+                          [class.dark:text-emerald-200]="item.channels[channel].available"
+                          [class.bg-field]="!item.channels[channel].available"
+                          [class.text-muted]="!item.channels[channel].available"
+                          [attr.aria-label]="
+                            (item.channels[channel].available ? 'Pausar' : 'Ativar') +
+                            ' ' +
+                            item.name +
+                            ' em ' +
+                            channel
+                          "
+                          (click)="toggleMenuAvailability(item.id, channel)"
+                        >
+                          {{ item.channels[channel].available ? 'Ativo' : 'Pausado' }}
+                        </button>
+                      </td>
+                    }
+                    <td class="px-5 py-3.5 text-right">
+                      <button
+                        type="button"
+                        aria-label="Editar item"
+                        title="Editar item"
+                        class="rounded-md p-2 text-muted hover:bg-field hover:text-ink"
+                        (click)="openMenuDialog(item)"
+                      >
+                        <ng-icon name="lucidePencil" size="16" />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label="Remover item"
+                        title="Remover item"
+                        class="rounded-md p-2 text-muted hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
+                        (click)="deleteMenuItem(item.id)"
+                      >
+                        <ng-icon name="lucideTrash2" size="16" />
+                      </button>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="6" class="px-5 py-12 text-center">
+                      <ng-icon name="lucideUtensils" size="24" class="mx-auto text-muted" />
+                      <p class="mt-3 text-sm font-medium text-ink">Nenhum item encontrado</p>
+                      <p class="mt-1 text-xs text-muted">
+                        Adicione um item ou ajuste a busca e a categoria.
+                      </p>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+      } @else if (activeSection() === 'couriers') {
+        <section class="workspace-intro mb-5 rounded-2xl p-5 sm:p-6" aria-label="Resumo dos entregadores">
+          <div class="workspace-intro-content">
+            <p class="workspace-eyebrow">OPERAÇÃO · ENTREGAS</p>
+            <h2 class="mt-2 text-xl font-bold sm:text-2xl">Sua equipe em movimento.</h2>
+            <p class="mt-2 max-w-2xl text-sm leading-relaxed">Acompanhe a presença, organize a fila e distribua as rotas com clareza.</p>
+            <p class="mt-3 text-xs">Dados demonstrativos · alterações válidas somente nesta sessão</p>
+            <div class="workspace-stats mt-5">
+              <div><div><strong>{{ activeCourierCount() }}</strong><span>cadastros ativos</span></div><ng-icon name="lucideUserRound" size="19" aria-hidden="true" /></div>
+              <div><div><strong>{{ onlineCourierCount() }}</strong><span>online</span></div><ng-icon name="lucideBike" size="19" aria-hidden="true" /></div>
+              <div><div><strong>{{ eligibleStoreCourierCount() }}</strong><span>disponíveis para despacho</span></div><ng-icon name="lucidePackageCheck" size="19" aria-hidden="true" /></div>
+            </div>
+          </div>
+        </section>
+        <section class="workspace-panel overflow-hidden rounded-2xl border border-line bg-surface">
+          <div
+            class="flex flex-wrap items-center justify-between gap-4 border-b border-line px-5 py-4"
+          >
+            <div>
+              <h2 class="text-base font-semibold text-ink">Equipe de entrega</h2>
+              <p class="mt-1 text-xs text-muted">
+                {{ activeCourierCount() }} ativos · vinculados a {{ storeName() }}
+              </p>
+            </div>
+            <a
+              routerLink="/courier"
+              class="inline-flex h-9 items-center gap-2 rounded-md border border-line px-3 text-xs font-semibold text-ink hover:bg-field"
+            >
+              <ng-icon name="lucideBike" size="15" /> Abrir app courier
+            </a>
+          </div>
+          <div class="grid gap-3 p-3 md:grid-cols-2 2xl:grid-cols-3">
+            @for (courier of filteredCouriers(); track courier.id) {
+              <article class="rounded-xl border border-line p-4">
+                <div class="flex items-start justify-between gap-2">
+                  <div class="flex min-w-0 items-center gap-3">
+                    <img [src]="courier.photoUrl || '/assets/images/courier-avatar-example.svg'" alt="" class="size-12 shrink-0 rounded-full border border-line object-cover" />
+                    <div class="min-w-0">
+                      <h3 class="break-words text-sm font-bold text-ink">{{ courier.name }}</h3>
+                      <p class="mt-1 text-xs text-muted">ID {{ 2000 + courier.id }} · {{ courier.phone }}</p>
+                    </div>
+                  </div>
+                  <div class="flex shrink-0">
+                    <button type="button" [attr.aria-label]="'Editar ' + courier.name" class="rounded-lg p-2 text-muted hover:bg-field" (click)="openCourierDialog(courier)"><ng-icon name="lucidePencil" size="16" /></button>
+                    <button type="button" [attr.aria-label]="'Remover ' + courier.name" class="rounded-lg p-2 text-muted hover:bg-field" (click)="deleteCourier(courier.id)"><ng-icon name="lucideTrash2" size="16" /></button>
+                  </div>
+                </div>
+                <p class="mt-3 text-xs text-muted">Por entrega: <strong class="text-ink">{{ courier.payModel === '% por pedido' ? (courier.payValue ?? 0) + '%' : formatCurrency(courier.payValue ?? 0) }}</strong> · {{ courier.ordersToday }} entregas hoje (demo)</p>
+                <p class="mt-1 text-xs text-muted">Repasse nesta sessão: <strong class="text-ink">{{ formatCurrency(courierEarnings(courier.id)) }}</strong></p>
+                <div class="mt-3 flex flex-wrap gap-2 border-t border-line pt-3">
+                  <button type="button" class="rounded-full bg-field px-3 py-1.5 text-xs font-semibold text-ink" [attr.aria-label]="(courier.active ? 'Pausar cadastro de ' : 'Ativar cadastro de ') + courier.name" (click)="toggleCourier(courier.id)">{{ courier.active ? 'Cadastro ativo' : 'Cadastro pausado' }}</button>
+                  <button type="button" role="switch" [attr.aria-checked]="courier.online" [disabled]="!courier.active" [attr.aria-label]="(courier.online ? 'Colocar offline ' : 'Colocar online ') + courier.name" class="rounded-full bg-field px-3 py-1.5 text-xs font-semibold text-ink disabled:opacity-50" (click)="toggleCourierOnline(courier.id)">{{ courier.online ? 'Online' : 'Offline' }}</button>
+                </div>
+              </article>
+            } @empty {
+              <p class="py-8 text-center text-sm text-muted">Nenhum entregador encontrado.</p>
+            }
+          </div>
+          <section class="border-t border-line p-4 sm:p-5" aria-labelledby="routes-title">
+            <div class="flex items-start gap-3">
+              <span class="overview-icon" aria-hidden="true"><ng-icon name="lucideMapPin" size="19" /></span>
+              <div>
+                <p class="workspace-section-label">GESTÃO DE ENTREGAS</p>
+                <h3 id="routes-title" class="mt-1 text-lg font-bold text-ink">Rotas e capacidade</h3>
+                <p class="mt-1 text-sm text-muted">Acompanhe a fila e os pedidos de cada entregador. Atribuições manuais não alteram a posição na fila.</p>
+              </div>
+            </div>
+            <div class="mt-5 grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
+              @for (courier of couriers(); track courier.id) {
+                <article
+                  class="rounded-xl border border-line bg-field/40 p-4"
+                  [class.ring-2]="managedCourierId() === courier.id"
+                  [class.ring-brand]="managedCourierId() === courier.id"
+                >
+                  <button
+                    type="button"
+                    class="w-full rounded-lg text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                    [attr.aria-pressed]="managedCourierId() === courier.id"
+                    [attr.aria-label]="'Destacar ' + courier.name"
+                    (click)="managedCourierId.set(courier.id)"
+                  >
+                    <div class="flex items-start justify-between gap-2">
+                      <div class="flex min-w-0 items-center gap-3">
+                        <img [src]="courier.photoUrl || '/assets/images/courier-avatar-example.svg'" alt="" class="size-10 shrink-0 rounded-full border border-line object-cover" />
+                        <div class="min-w-0">
+                          <h4 class="break-words text-sm font-bold text-ink">{{ courier.name }}</h4>
+                          <p class="mt-1 text-xs text-muted">
+                            {{ courier.kind }} · {{ queuePosition(courier.id) === null ? 'fora da fila' : 'Fila ' + queuePosition(courier.id) }}
+                          </p>
+                        </div>
+                      </div>
+                      <span
+                        class="shrink-0 rounded-full px-2 py-1 text-[11px] font-bold"
+                        [class.bg-emerald-100]="courier.online && courier.active"
+                        [class.text-emerald-800]="courier.online && courier.active"
+                        [class.bg-line]="!courier.online || !courier.active"
+                        >{{
+                          courier.active ? (courier.online ? 'Online' : 'Offline') : 'Pausado'
+                        }}</span
+                      >
+                    </div>
+                    <div class="mt-4 grid grid-cols-3 gap-2 rounded-lg bg-surface p-3 text-xs text-muted">
+                      <span><strong class="block text-base text-ink">{{ courierJobs(courier.id).length }}</strong>pedidos</span>
+                      <span><strong class="block text-base text-ink">{{ courierLoad(courier.id) }}/{{ maxItemsPerCourier() }}</strong>itens</span>
+                      <span><strong class="block text-base text-ink">{{ courierCapacityLeft(courier.id) }}</strong>livres</span>
+                    </div>
+                    <p class="mt-3 flex items-center gap-1.5 text-xs text-muted">
+                      <ng-icon name="lucideClock" size="14" aria-hidden="true" />
+                      {{
+                        courierWaitingMinutes(courier.id) === null
+                          ? 'Sem chegada à loja registrada'
+                          : 'Aguardando na loja há ' + courierWaitingMinutes(courier.id) + ' min'
+                      }}
+                    </p>
+                  </button>
+                  <div class="mt-3 space-y-2 border-t border-line pt-3">
+                    <p class="text-[11px] font-bold uppercase tracking-wide text-muted">Pedidos na rota</p>
+                    @for (job of courierJobs(courier.id); track job.orderId) {
+                      <div class="flex items-center justify-between gap-2 rounded-lg bg-surface px-3 py-2 text-xs">
+                        <span class="min-w-0"
+                          ><strong class="text-ink">#{{ job.orderId }}</strong> ·
+                          {{ job.routeId }} · {{ job.itemCount }} itens
+                          <p class="mt-0.5 text-muted">
+                            {{ job.status }}
+                            @if (job.arrivedAt) {
+                              · espera {{ elapsedSince(job.arrivedAt) }} min
+                            }
+                          </p></span
+                        ><button
+                          type="button"
+                          [attr.aria-label]="'Remover pedido #' + job.orderId + ' da rota'"
+                          title="Remover da rota"
+                          class="rounded-lg p-2 text-muted hover:bg-red-50 hover:text-red-600 focus-visible:outline-2 focus-visible:outline-brand"
+                          (click)="assignCourier(job.orderId, '')"
+                        >
+                          <ng-icon name="lucideX" size="15" />
+                        </button>
+                      </div>
+                    } @empty {
+                      <p class="text-xs text-muted">Sem pedidos na rota</p>
+                    }
+                  </div>
+                </article>
+              }
+            </div>
+            <div class="mt-5 rounded-xl border border-line bg-field/40 p-4 sm:p-5">
+              <div class="flex items-start gap-3">
+                <span class="overview-icon" aria-hidden="true"><ng-icon name="lucidePackageCheck" size="19" /></span>
+                <div>
+                  <p class="workspace-section-label">ORGANIZAR DESPACHO</p>
+                  <h4 class="mt-1 text-base font-bold text-ink">Montar ou transferir rota</h4>
+                  <p class="mt-1 text-sm text-muted">Selecione pedidos ativos; a capacidade será conferida antes de aplicar.</p>
+                </div>
+              </div>
+              <div class="mt-5 grid gap-3 md:grid-cols-2">
+                <label class="block min-w-0">
+                  <span class="mb-1.5 block text-xs font-semibold text-ink">Destino da rota</span>
+                  <select
+                    [value]="routeTargetCourierId()"
+                    (change)="routeTargetCourierId.set($any($event.target).value)"
+                    class="h-10 w-full rounded-lg border border-line bg-surface px-3 text-sm text-ink"
+                  >
+                    <option value="" [selected]="!routeTargetCourierId()" disabled>Selecione um entregador disponível</option>
+                    @for (courier of couriers(); track courier.id) {
+                      <option [value]="courier.id" [selected]="'' + courier.id === routeTargetCourierId()" [disabled]="!courier.active || !courier.online || !courier.atStoreSince">
+                        {{ courier.name }}{{ !courier.active ? ' · pausado' : !courier.online ? ' · offline' : !courier.atStoreSince ? ' · fora da loja' : '' }}
+                      </option>
+                    }
+                  </select>
+                </label>
+                <label class="block min-w-0">
+                  <span class="mb-1.5 block text-xs font-semibold text-ink">Justificativa <span class="font-normal text-muted">(opcional)</span></span>
+                  <input
+                    [value]="routeChangeReason()"
+                    (input)="routeChangeReason.set($any($event.target).value)"
+                    placeholder="Ex.: reorganização da rota"
+                    class="h-10 w-full rounded-lg border border-line bg-surface px-3 text-sm text-ink"
+                  />
+                </label>
+              </div>
+              <div class="mt-5 flex flex-wrap items-center justify-between gap-2">
+                <p class="text-sm font-semibold text-ink">Pedidos disponíveis</p>
+                <span class="rounded-full border border-line bg-surface px-3 py-1 text-xs font-semibold text-muted">{{ routeOrderSelection().length }} {{ routeOrderSelection().length === 1 ? 'selecionado' : 'selecionados' }}</span>
+              </div>
+              <div class="mt-3 grid gap-2 sm:grid-cols-2 2xl:grid-cols-3">
+                @for (order of assignableOrders(); track order.id) {
+                  <label
+                    class="flex cursor-pointer items-start gap-3 rounded-xl border border-line bg-surface p-3 hover:border-brand"
+                    [class.route-order-selected]="routeOrderSelection().includes(order.id)"
+                    ><input
+                      type="checkbox"
+                      [checked]="routeOrderSelection().includes(order.id)"
+                      (change)="toggleRouteOrder(order.id, $any($event.target).checked)"
+                      class="mt-0.5 size-4 accent-brand"
+                    /><span class="min-w-0"
+                      ><strong class="text-sm text-ink"
+                        >#{{ order.id }} · {{ order.customer }}</strong
+                      ><span class="mt-1 block break-words text-xs text-muted"
+                        >{{ order.items }} ·
+                        {{ order.courierId ? courierName(order.courierId) : 'Sem motoboy' }}</span
+                      ></span
+                    ></label
+                  >
+                } @empty {
+                  <p class="text-sm text-muted">Nenhum pedido ativo de entrega da loja própria.</p>
+                }
+              </div>
+              <div class="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
+                <p class="text-xs text-muted">A capacidade é validada para o entregador escolhido.</p>
+                <button
+                  type="button"
+                  class="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-brand px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  [disabled]="routeOrderSelection().length === 0 || !routeTargetCourierId()"
+                  (click)="assignSelectedOrders()"
+                >
+                  <ng-icon name="lucideArrowRight" size="16" aria-hidden="true" />
+                  Atribuir {{ routeOrderSelection().length }} {{ routeOrderSelection().length === 1 ? 'pedido' : 'pedidos' }}
+                </button>
+              </div>
+            </div>
+          </section>
+        </section>
+      } @else if (activeSection() === 'finance') {
+        <section class="space-y-5">
+          <div class="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p class="text-xs font-medium uppercase text-brand-2">Visão demonstrativa</p>
+              <p class="mt-1 text-sm text-muted">Conciliação estimada · últimas movimentações</p>
+            </div>
+            <button
+              type="button"
+              class="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-surface px-3 text-xs font-semibold text-ink hover:bg-field"
+              (click)="
+                toast.show(
+                  'A exportação ficará disponível após conectar a fonte financeira.',
+                  'info'
+                )
+              "
+            >
+              <ng-icon name="lucideFileText" size="15" /> Exportar relatório
+            </button>
+          </div>
+
+          <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <article class="rounded-lg border border-line bg-surface p-4">
+              <p class="text-xs font-medium text-muted">Vendas brutas no período</p>
+              <p class="mt-3 text-xl font-bold text-ink">
+                {{ formatCurrency(grossSettlementTotal()) }}
+              </p>
+              <p class="mt-1 text-xs text-muted">
+                {{ settlements().length }} pedidos de exemplo conciliados
+              </p>
+            </article>
+            <article class="rounded-lg border border-line bg-surface p-4">
+              <p class="text-xs font-medium text-muted">Comissões estimadas</p>
+              <p class="mt-3 text-xl font-bold text-ink">
+                {{ formatCurrency(platformCommissionTotal()) }}
+              </p>
+              <p class="mt-1 text-xs text-muted">Taxas de marketplaces · revisar no extrato</p>
+            </article>
+            <article class="rounded-lg border border-line bg-surface p-4">
+              <p class="text-xs font-medium text-muted">Tarifas de pagamento</p>
+              <p class="mt-3 text-xl font-bold text-ink">{{ formatCurrency(paymentFeeTotal()) }}</p>
+              <p class="mt-1 text-xs text-muted">Estimativa de processamento financeiro</p>
+            </article>
+            <article class="rounded-lg border border-line bg-surface p-4">
+              <p class="text-xs font-medium text-muted">Líquido conciliado</p>
+              <p class="mt-3 text-xl font-bold text-ink">
+                {{ formatCurrency(netSettlementTotal()) }}
+              </p>
+              <p class="mt-1 text-xs text-muted">Bruto menos comissão e tarifa estimadas</p>
+            </article>
+            <article class="rounded-lg border border-line bg-surface p-4">
+              <p class="text-xs font-medium text-muted">Saldo disponível · Asaas</p>
+              <p class="mt-3 text-xl font-bold text-ink">
+                {{ formatCurrency(availableBalance()) }}
+              </p>
+              <p class="mt-1 text-xs text-muted">Última atualização demonstrativa</p>
+            </article>
+            <article
+              class="flex flex-col justify-between rounded-lg border border-line bg-surface p-4"
+            >
+              <div>
+                <p class="text-xs font-medium text-muted">A liberar / previsto</p>
+                <p class="mt-3 text-xl font-bold text-ink">
+                  {{ formatCurrency(pendingSettlementTotal()) }}
+                </p>
+              </div>
+              <button
+                type="button"
+                class="mt-4 inline-flex h-9 items-center justify-center gap-2 rounded-md bg-brand px-3 text-xs font-semibold text-white hover:bg-brand/90 disabled:opacity-60"
+                [disabled]="payoutPending()"
+                (click)="requestPayout()"
+              >
+                @if (payoutPending()) {
+                  <ng-icon name="lucideLoaderCircle" size="15" class="animate-spin" /> Processando
+                } @else {
+                  Solicitar repasse <ng-icon name="lucideArrowUpRight" size="15" />
+                }
+              </button>
+            </article>
+          </div>
+
+          <section class="rounded-lg border border-line bg-surface p-5">
+            <div class="mb-4 flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 class="text-base font-semibold text-ink">Conciliação por pedido</h2>
+                <p class="mt-1 text-xs text-muted">
+                  Compare venda, comissão, tarifa e valor líquido por canal.
+                </p>
+              </div>
+              <select
+                [value]="reconciliationFilter()"
+                (change)="reconciliationFilter.set($any($event.target).value)"
+                aria-label="Filtrar conciliação por canal"
+                class="h-9 rounded-md border border-line bg-field px-3 text-xs text-ink outline-none focus:border-brand"
+              >
+                <option>Todos os canais</option>
+                <option>iFood</option>
+                <option>99Food</option>
+                <option>Loja própria</option>
+              </select>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full min-w-245 text-left text-sm">
+                <thead class="bg-field text-[11px] font-semibold uppercase text-muted">
+                  <tr>
+                    <th class="px-3 py-3">Repasse / pedido</th>
+                    <th class="px-3 py-3">Canal</th>
+                    <th class="px-3 py-3">Data</th>
+                    <th class="px-3 py-3 text-right">Bruto</th>
+                    <th class="px-3 py-3 text-right">Comissão</th>
+                    <th class="px-3 py-3 text-right">Pagamento</th>
+                    <th class="px-3 py-3 text-right">Líquido</th>
+                    <th class="px-3 py-3">Situação</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-line">
+                  @for (row of filteredSettlements(); track row.id) {
+                    <tr>
+                      <td class="px-3 py-3.5 font-semibold text-ink">
+                        {{ row.id
+                        }}<span class="mt-1 block text-xs font-normal text-muted"
+                          >Pedido #{{ row.orderId }}</span
+                        >
+                      </td>
+                      <td class="px-3 py-3.5 text-muted">{{ row.channel }}</td>
+                      <td class="whitespace-nowrap px-3 py-3.5 text-muted">{{ row.date }}</td>
+                      <td class="whitespace-nowrap px-3 py-3.5 text-right text-ink">
+                        {{ formatCurrency(row.gross) }}
+                      </td>
+                      <td class="whitespace-nowrap px-3 py-3.5 text-right text-muted">
+                        −{{ formatCurrency(row.commission) }}
+                      </td>
+                      <td class="whitespace-nowrap px-3 py-3.5 text-right text-muted">
+                        −{{ formatCurrency(row.paymentFee) }}
+                      </td>
+                      <td class="whitespace-nowrap px-3 py-3.5 text-right font-semibold text-ink">
+                        {{ formatCurrency(row.net) }}
+                      </td>
+                      <td class="px-3 py-3.5">
+                        <span
+                          class="whitespace-nowrap rounded-full bg-field px-2.5 py-1 text-xs font-semibold text-muted"
+                          >{{ row.status }}</span
+                        >
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td colspan="8" class="px-4 py-9 text-center text-sm text-muted">
+                        Nenhum lançamento para este canal.
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+            <p class="mt-3 text-xs leading-relaxed text-muted">
+              As taxas e valores acima são dados de demonstração. As comissões reais variam por
+              contrato, campanha, modalidade de entrega e meio de pagamento.
+            </p>
+          </section>
+
+          <section class="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(18rem,0.9fr)]">
+            <div class="overflow-hidden rounded-lg border border-line bg-surface">
+              <div class="border-b border-line px-5 py-4">
+                <h2 class="text-base font-semibold text-ink">Repasses e transferências</h2>
+                <p class="mt-1 text-xs text-muted">Solicitações e histórico de pagamentos</p>
+              </div>
+              <div class="divide-y divide-line">
+                @for (payout of payouts(); track payout.id) {
+                  <div class="flex items-center gap-3 px-5 py-3.5">
+                    <span
+                      class="flex size-9 items-center justify-center rounded-md bg-brand/10 text-brand"
+                      ><ng-icon name="lucideArrowUpRight" size="17"
+                    /></span>
+                    <span class="min-w-0 flex-1"
+                      ><span class="block text-sm font-semibold text-ink"
+                        >{{ payout.id }} · {{ payout.destination }}</span
+                      ><span class="mt-0.5 block text-xs text-muted">{{ payout.date }}</span></span
+                    >
+                    <span class="text-right"
+                      ><span class="block text-sm font-semibold text-ink">{{
+                        formatCurrency(payout.amount)
+                      }}</span
+                      ><span class="mt-0.5 block text-xs text-muted">{{
+                        payout.status
+                      }}</span></span
+                    >
+                  </div>
+                }
+              </div>
+            </div>
+            <div class="rounded-lg border border-line bg-surface p-5">
+              <h2 class="text-base font-semibold text-ink">Parâmetros estimados</h2>
+              <p class="mt-1 text-xs text-muted">
+                Use como referência, não como conciliação contábil.
+              </p>
+              <div class="mt-4 divide-y divide-line">
+                @for (rate of commissionRates; track rate.channel) {
+                  <div class="flex items-center justify-between gap-3 py-3 text-sm">
+                    <span class="text-ink">{{ rate.channel }}</span
+                    ><span class="font-semibold text-muted">{{ rate.rate }}</span>
+                  </div>
+                }
+              </div>
+              <p class="mt-3 rounded-md bg-field p-3 text-xs leading-relaxed text-muted">
+                Para valores reais, conecte o Asaas e importe extratos das plataformas. Nunca
+                calcule repasse real com percentuais ilustrativos.
+              </p>
+            </div>
+          </section>
+        </section>
+      } @else if (activeSection() === 'integrations') {
+        <section class="space-y-4">
+          <div
+            class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-surface px-5 py-4"
+          >
+            <div>
+              <h2 class="text-sm font-semibold text-ink">Canais e serviços</h2>
+              <p class="mt-1 text-xs text-muted">
+                Estado demonstrativo; autenticação real depende de credenciais.
+              </p>
+            </div>
+            <span
+              class="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-950/50 dark:text-amber-200"
+              >Ambiente local</span
+            >
+          </div>
+          <div class="grid gap-3 xl:grid-cols-2">
+            @for (integration of integrations(); track integration.id) {
+              <article class="flex min-h-44 flex-col rounded-lg border border-line bg-surface p-5">
+                <div class="flex items-start gap-3">
+                  <span
+                    class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand"
+                    ><ng-icon [name]="integration.icon" size="19"
+                  /></span>
+                  <div class="min-w-0 flex-1">
+                    <h3 class="font-semibold text-ink">{{ integration.name }}</h3>
+                    <p class="mt-1 text-sm leading-relaxed text-muted">
+                      {{ integration.description }}
+                    </p>
+                  </div>
+                  <span
+                    class="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-950/50 dark:text-amber-200"
+                    >{{ integration.status }}</span
+                  >
+                </div>
+                <div class="mt-auto flex items-center justify-between gap-3 pt-5">
+                  <p class="text-xs text-muted">
+                    {{ integration.id === 'asaas' ? 'Financeiro' : 'Pedidos e atendimento' }}
+                  </p>
+                  <div class="flex items-center gap-2">
+                    <a
+                      [href]="integration.documentationUrl"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="inline-flex h-9 items-center gap-1.5 rounded-md border border-line px-3 text-xs font-semibold text-ink transition-colors hover:bg-field"
+                    >
+                      <ng-icon name="lucideArrowUpRight" size="14" /> Documentação
+                    </a>
+                    <button
+                      type="button"
+                      class="inline-flex h-9 min-w-28 items-center justify-center gap-2 rounded-md bg-brand px-3 text-xs font-semibold text-white transition-colors hover:bg-brand/90 disabled:cursor-wait disabled:opacity-70"
+                      [disabled]="pendingIntegration() === integration.id"
+                      (click)="checkIntegration(integration.id)"
+                    >
+                      @if (pendingIntegration() === integration.id) {
+                        <ng-icon name="lucideLoaderCircle" size="15" class="animate-spin" /> Aguarde
+                      } @else {
+                        Verificar acesso
+                      }
+                    </button>
+                  </div>
+                </div>
+              </article>
+            }
+          </div>
+        </section>
+      } @else if (activeSection() === 'settings' && selectedAnnouncement(); as selected) {
+        <section class="workspace-panel mx-auto max-w-3xl rounded-2xl border border-line bg-surface p-5 sm:p-8" aria-label="Detalhes da notificação">
+          <button type="button" (click)="selectedAnnouncement.set(null)" class="text-sm font-semibold text-brand hover:underline focus-visible:outline-2 focus-visible:outline-brand">← Voltar às configurações</button>
+          <p class="workspace-section-label mt-6">{{ selected.example ? 'EXEMPLO · ' : '' }}{{ selected.item.category === 'news' ? 'NOTÍCIA' : 'AVISO' }}</p>
+          <h2 class="mt-2 break-words text-2xl font-bold text-ink">{{ selected.item.title }}</h2>
+          @if (!selected.example) {
+            <p class="mt-2 text-xs text-muted">{{ selected.item.publishedAt | date: 'dd/MM/yyyy HH:mm' }} · {{ selected.item.readAt ? 'Lido' : 'Não lido' }}</p>
+          } @else {
+            <p class="mt-2 text-xs text-muted">Conteúdo demonstrativo, não é uma comunicação real.</p>
+          }
+          <p class="mt-6 whitespace-pre-wrap break-words text-sm leading-relaxed text-ink">{{ selected.item.message }}</p>
+          @if (!selected.example && !selected.item.readAt) {
+            <button type="button" [disabled]="announcementReadingId() !== null" (click)="markAnnouncementRead(selected.item.id)" class="mt-6 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{{ announcementReadingId() ? 'Salvando...' : 'Marcar como lido' }}</button>
+          }
+          @if (announcementsError()) {
+            <p role="alert" class="mt-3 text-sm text-red-600 dark:text-red-300">{{ announcementsError() }}</p>
+          }
+        </section>
+      } @else if (activeSection() === 'settings') {
+        <section aria-label="Configurações do painel">
+          <div class="workspace-intro rounded-2xl p-5 sm:p-6">
+            <div class="workspace-intro-content">
+              <p class="workspace-eyebrow">SUA CONTA · PREFERÊNCIAS</p>
+              <h2 class="mt-2 text-xl font-bold sm:text-2xl">Um painel que trabalha com você.</h2>
+              <p class="mt-2 max-w-2xl text-sm leading-relaxed">Personalize sua experiência, encontre ajuda e acompanhe o que ainda está em preparação.</p>
+            </div>
+          </div>
+
+          <div class="mt-5 grid gap-4 xl:grid-cols-2">
+            <article class="workspace-panel rounded-2xl border border-line bg-surface p-5 sm:p-6 xl:col-span-2">
+              <div class="flex items-start gap-4">
+                <span class="workspace-setting-icon"><ng-icon name="lucideUserRound" size="20" aria-hidden="true" /></span>
+                <div class="min-w-0 flex-1">
+                  <p class="workspace-section-label">SUA CONTA</p>
+                  <h2 class="mt-1 text-base font-bold text-ink">Dados de acesso</h2>
+                  @if (accountEmail(); as email) {
+                    <p class="mt-1 break-all text-sm text-muted">{{ accountName() }} · {{ email }}</p>
+                    <details class="mt-4">
+                      <summary class="cursor-pointer text-sm font-semibold text-brand">Alterar e-mail</summary>
+                      <form class="mt-4 max-w-xl space-y-3" (submit)="requestAccountEmailChange($event)">
+                        <label for="account-new-email" class="block text-sm font-semibold text-ink">Novo e-mail</label>
+                        <input id="account-new-email" type="email" autocomplete="email" required maxlength="254" [value]="newAccountEmail()" (input)="newAccountEmail.set($any($event.target).value)" placeholder="novo@email.com" class="h-10 w-full rounded-lg border border-line bg-field px-3 text-sm text-ink" />
+                        <label for="account-password" class="block text-sm font-semibold text-ink">Senha atual</label>
+                        <input id="account-password" type="password" autocomplete="current-password" required maxlength="128" [value]="accountPassword()" (input)="accountPassword.set($any($event.target).value)" placeholder="Digite sua senha atual" class="h-10 w-full rounded-lg border border-line bg-field px-3 text-sm text-ink" />
+                        <p class="text-xs leading-relaxed text-muted">Enviaremos um código ao novo endereço. O e-mail atual só muda após a confirmação.</p>
+                        @if (accountEmailError()) { <p role="alert" class="text-sm text-red-600 dark:text-red-300">{{ accountEmailError() }}</p> }
+                        <button type="submit" [disabled]="accountEmailSaving()" class="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{{ accountEmailSaving() ? 'Enviando...' : 'Enviar código' }}</button>
+                      </form>
+                      <form class="mt-5 max-w-xl space-y-3 border-t border-line pt-4" (submit)="confirmAccountEmail($event)">
+                        <label for="account-email-code" class="block text-sm font-semibold text-ink">Código recebido por e-mail</label>
+                        <input id="account-email-code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{8}" maxlength="8" required [value]="accountEmailCode()" (input)="accountEmailCode.set($any($event.target).value)" placeholder="8 dígitos" class="h-10 w-full rounded-lg border border-line bg-field px-3 text-sm text-ink" />
+                        <p class="text-xs leading-relaxed text-muted">O código expira em 15 minutos e permite até 5 tentativas.</p>
+                        @if (accountCodeError()) { <p role="alert" class="text-sm text-red-600 dark:text-red-300">{{ accountCodeError() }}</p> }
+                        <button type="submit" [disabled]="accountCodeSaving()" class="rounded-lg border border-line px-4 py-2 text-sm font-semibold text-ink disabled:opacity-50">{{ accountCodeSaving() ? 'Confirmando...' : 'Confirmar código' }}</button>
+                      </form>
+                    </details>
+                  } @else {
+                    <p class="mt-1 text-sm text-muted">Entre com sua conta para consultar seus dados e solicitar a alteração de e-mail.</p>
+                    <a routerLink="/auth/signin" class="mt-4 inline-block text-sm font-semibold text-brand">Ir para o login</a>
+                  }
+                </div>
+              </div>
+            </article>
+            <article class="workspace-panel rounded-2xl border border-line bg-surface p-5 sm:p-6">
+              <div class="flex items-start justify-between gap-4">
+                <div class="flex items-start gap-4">
+                  <span class="workspace-setting-icon"><ng-icon name="lucideSettings" size="20" aria-hidden="true" /></span>
+                  <div>
+                    <p class="workspace-section-label">PREFERÊNCIAS</p>
+                    <h2 class="mt-1 text-base font-bold text-ink">Aparência</h2>
+                    <p class="mt-1 text-sm leading-relaxed text-muted">Tema atual: {{ theme.isDark() ? 'escuro' : 'claro' }}. Use o botão no cabeçalho; a preferência é salva neste navegador.</p>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <article class="workspace-panel rounded-2xl border border-line bg-surface p-5 sm:p-6">
+              <div class="flex items-start gap-4">
+                <span class="workspace-setting-icon"><ng-icon name="lucideInfo" size="20" aria-hidden="true" /></span>
+                <div>
+                  <p class="workspace-section-label">APRENDA A USAR</p>
+                  <h2 class="mt-1 text-base font-bold text-ink">Guia inicial</h2>
+                  <p class="mt-1 text-sm leading-relaxed text-muted">Conheça as áreas do painel e retome o guia de onde parou nesta visita.</p>
+                  <button type="button" (click)="openGuide()" class="mt-4 inline-flex items-center gap-2 rounded-lg border border-line px-4 py-2 text-sm font-semibold text-ink hover:bg-field focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+                    Abrir guia inicial <ng-icon name="lucideArrowRight" size="15" aria-hidden="true" />
+                  </button>
+                </div>
+              </div>
+            </article>
+
+            <article class="workspace-panel rounded-2xl border border-line bg-surface p-5 sm:p-6">
+              <div class="flex items-start gap-4">
+                <span class="workspace-setting-icon"><ng-icon name="lucideStore" size="20" aria-hidden="true" /></span>
+                <div>
+                  <p class="workspace-section-label">ESTABELECIMENTO</p>
+                  <h2 class="mt-1 text-base font-bold text-ink">Dados e operação da loja</h2>
+                  <p class="mt-1 text-sm leading-relaxed text-muted">Consulte o nome, o endereço e o funcionamento da loja na área dedicada.</p>
+                  <button type="button" (click)="selectSection('store')" class="mt-4 inline-flex items-center gap-2 rounded-lg border border-line px-4 py-2 text-sm font-semibold text-ink hover:bg-field focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Abrir Loja <ng-icon name="lucideArrowRight" size="15" aria-hidden="true" /></button>
+                </div>
+              </div>
+            </article>
+
+            <article class="workspace-panel rounded-2xl border border-line bg-surface p-5 sm:p-6">
+              <div class="flex items-start gap-4">
+                <span class="workspace-setting-icon"><ng-icon name="lucideBell" size="20" aria-hidden="true" /></span>
+                <div class="min-w-0">
+                  <p class="workspace-section-label">COMUNICAÇÃO</p>
+                  <h2 class="mt-1 text-base font-bold text-ink">Notificações e novidades</h2>
+                  <p class="mt-1 text-sm leading-relaxed text-muted">Consulte os avisos e notícias disponíveis para sua conta. A publicação pelo painel administrativo ainda não está disponível.</p>
+                  <div class="mt-4 flex flex-wrap gap-2">
+                    <span class="workspace-pending">E-mail · indisponível</span>
+                    <span class="workspace-pending">Push · indisponível</span>
+                  </div>
+                  <p class="mt-4 text-xs font-semibold uppercase text-muted">Exemplos de notificações</p>
+                  <div class="mt-2 space-y-2">
+                    @for (example of exampleAnnouncements; track example.id) {
+                      <button type="button" (click)="selectedAnnouncement.set({ item: example, example: true })" class="block w-full rounded-xl border border-line bg-field p-3 text-left hover:bg-page focus-visible:outline-2 focus-visible:outline-brand">
+                        <span class="block text-xs font-semibold text-muted">EXEMPLO · {{ example.category === 'news' ? 'Notícia' : 'Aviso' }}</span>
+                        <span class="mt-1 block text-sm font-semibold text-ink">{{ example.title }}</span>
+                      </button>
+                    }
+                  </div>
+                  <button type="button" (click)="loadAnnouncements()" [disabled]="announcementsLoading()" class="mt-4 rounded-lg border border-line px-4 py-2 text-sm font-semibold text-ink hover:bg-field disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">{{ announcementsLoading() ? 'Carregando...' : (announcementsOpened() ? 'Atualizar avisos' : 'Consultar avisos') }}</button>
+                  @if (announcementsOpened() && announcementLive.status() === 'disconnected') {
+                    <p role="status" class="mt-3 text-xs text-muted">Atualização em tempo real indisponível. Use Atualizar avisos para consultar novamente.</p>
+                  }
+                  @if (announcementsError()) {
+                    <p role="alert" class="mt-3 text-sm text-red-600 dark:text-red-300">{{ announcementsError() }}</p>
+                  } @else if (announcementsOpened() && !announcementsLoading()) {
+                    <div class="mt-4 space-y-3" aria-label="Avisos e notícias">
+                      @for (announcement of announcements(); track announcement.id) {
+                        <article class="rounded-xl border border-line bg-field p-4">
+                          <p class="text-xs font-semibold text-muted">{{ announcement.category === 'news' ? 'Notícia' : 'Aviso' }} · {{ announcement.publishedAt | date: 'dd/MM/yyyy HH:mm' }} · {{ announcement.readAt ? 'Lido' : 'Não lido' }}</p>
+                          <button type="button" (click)="selectedAnnouncement.set({ item: announcement, example: false })" class="mt-1 block text-left text-sm font-bold text-ink hover:text-brand focus-visible:outline-2 focus-visible:outline-brand">{{ announcement.title }}</button>
+                        </article>
+                      } @empty {
+                        <p class="text-sm text-muted">Nenhum aviso disponível para sua conta.</p>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+            </article>
+
+            <article class="workspace-panel rounded-2xl border border-line bg-surface p-5 sm:p-6 xl:col-span-2">
+              <div class="flex items-start gap-4">
+                <span class="workspace-setting-icon"><ng-icon name="lucidePhone" size="20" aria-hidden="true" /></span>
+                <div class="min-w-0">
+                  <p class="workspace-section-label">ESTAMOS AQUI PARA AJUDAR</p>
+                  <h2 class="mt-1 text-base font-bold text-ink">Atendimento Prattio</h2>
+                  <p class="mt-1 max-w-2xl text-sm leading-relaxed text-muted">Os canais de atendimento ainda não foram configurados. Nenhuma mensagem ou ligação será enviada por esta tela.</p>
+                  <div class="mt-4 flex flex-wrap gap-2">
+                    <span class="workspace-pending">WhatsApp · indisponível</span>
+                    <span class="workspace-pending">E-mail · indisponível</span>
+                    <span class="workspace-pending">Chat · indisponível</span>
+                    <span class="workspace-pending">Ligação · indisponível</span>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <article class="workspace-panel rounded-2xl border border-line bg-surface p-5 sm:p-6 xl:col-span-2">
+              <div class="flex items-start gap-4">
+                <span class="workspace-setting-icon"><ng-icon name="lucideInfo" size="20" aria-hidden="true" /></span>
+                <div class="min-w-0 flex-1">
+                  <p class="workspace-section-label">AJUDE A MELHORAR</p>
+                  <h2 class="mt-1 text-base font-bold text-ink">Sugestões e problemas</h2>
+                  <p class="mt-1 max-w-2xl text-sm leading-relaxed text-muted">Registre uma sugestão ou descreva um problema. O relato será salvo na sua conta; a consulta pela equipe depende do futuro painel administrativo. Não inclua senhas ou informações sensíveis.</p>
+                  <form class="mt-4 max-w-2xl space-y-3" (submit)="submitFeedback($event)">
+                    <label class="block text-sm font-semibold text-ink" for="feedback-kind">Tipo de relato</label>
+                    <select id="feedback-kind" [value]="feedbackKind()" (change)="feedbackKind.set($any($event.target).value)" class="h-10 w-full rounded-lg border border-line bg-field px-3 text-sm text-ink">
+                      <option value="suggestion">Sugestão de melhoria</option>
+                      <option value="problem">Problema ou erro</option>
+                    </select>
+                    <label class="block text-sm font-semibold text-ink" for="feedback-message">Descrição</label>
+                    <textarea id="feedback-message" [value]="feedbackMessage()" (input)="feedbackMessage.set($any($event.target).value)" rows="4" maxlength="2000" placeholder="Conte o que aconteceu ou compartilhe sua ideia..." class="w-full rounded-lg border border-line bg-field p-3 text-sm text-ink outline-none focus:border-brand"></textarea>
+                    <p class="text-xs text-muted">De 10 a 2000 caracteres · necessário entrar com uma conta de restaurante</p>
+                    @if (feedbackError()) {
+                      <p role="alert" class="text-sm font-medium text-red-600 dark:text-red-300">{{ feedbackError() }}</p>
+                    }
+                    <button type="submit" [disabled]="feedbackSaving()" class="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand/90 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">{{ feedbackSaving() ? 'Registrando...' : 'Registrar relato' }}</button>
+                  </form>
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
+      } @else {
+        <section class="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(20rem,0.8fr)]">
+          <form
+            class="rounded-lg border border-line bg-surface p-5"
+            (submit)="$event.preventDefault(); saveStoreSettings()"
+          >
+            <div class="mb-5">
+              <h2 class="text-base font-semibold text-ink">Dados da loja</h2>
+              <p class="mt-1 text-xs text-muted">Informações exibidas nos canais de venda.</p>
+            </div>
+            <div class="space-y-4">
+              <label class="block"
+                ><span class="mb-1.5 block text-sm font-medium text-ink/80">Nome público</span
+                ><input
+                  [value]="storeNameDraft()"
+                  (input)="storeNameDraft.set($any($event.target).value)"
+                  class="h-10 w-full rounded-md border border-line bg-field px-3 text-sm text-ink outline-none placeholder:text-muted focus:border-brand"
+                  required
+                  minlength="3"
+              /></label>
+              <label class="block"
+                ><span class="mb-1.5 block text-sm font-medium text-ink/80">Endereço</span
+                ><input
+                  [value]="storeAddressDraft()"
+                  (input)="storeAddressDraft.set($any($event.target).value)"
+                  class="h-10 w-full rounded-md border border-line bg-field px-3 text-sm text-ink outline-none placeholder:text-muted focus:border-brand"
+                  required
+                  minlength="5"
+              /></label>
+              <button
+                type="submit"
+                class="inline-flex h-10 items-center gap-2 rounded-md bg-brand px-4 text-sm font-semibold text-white hover:bg-brand/90"
+              >
+                <ng-icon name="lucideCheck" size="16" /> Salvar dados
+              </button>
+            </div>
+          </form>
+          <section class="rounded-lg border border-line bg-surface p-5">
+            <h2 class="text-base font-semibold text-ink">Operação da loja</h2>
+            <p class="mt-1 text-xs text-muted">Controle a entrada de novos pedidos.</p>
+            <div class="mt-5 flex items-center justify-between gap-4 border-t border-line pt-4">
+              <div>
+                <p class="text-sm font-medium text-ink">
+                  {{ storeOpen() ? 'Recebendo pedidos' : 'Pedidos pausados' }}
+                </p>
+                <p class="mt-1 text-xs text-muted">
+                  {{
+                    storeOpen()
+                      ? 'A loja está disponível nos canais.'
+                      : 'Os canais não devem receber novos pedidos.'
+                  }}
+                </p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                [attr.aria-checked]="storeOpen()"
+                aria-label="Receber novos pedidos"
+                class="relative h-6 w-11 shrink-0 rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                [class.bg-brand-2]="storeOpen()"
+                [class.bg-line]="!storeOpen()"
+                (click)="toggleStoreOpen()"
+              >
+                <span
+                  class="absolute left-1 top-1 size-4 rounded-full bg-white shadow transition-transform"
+                  [class.translate-x-5]="storeOpen()"
+                  aria-hidden="true"
+                ></span>
+              </button>
+            </div>
+            <div class="mt-5 flex items-center gap-2 rounded-md bg-field p-3 text-xs text-muted">
+              <ng-icon name="lucideMapPin" size="16" class="shrink-0" />{{ storeAddress() }}
+            </div>
+          </section>
+        </section>
+      }
+    </main>
+  </div>
+
+  @if (dialog()) {
+    <div
+      class="fixed inset-0 z-70 grid place-items-center overflow-y-auto bg-black/45 p-4"
+      (click)="closeDialog()"
+    >
+      <section
+        role="dialog"
+        aria-modal="true"
+        [attr.aria-label]="
+          dialog() === 'menu'
+            ? 'Item do cardápio'
+            : dialog() === 'courier'
+              ? 'Entregador'
+              : 'Novo pedido'
+        "
+        class="my-auto w-full max-w-md rounded-lg border border-line bg-surface p-5 text-ink shadow-2xl"
+        (click)="$event.stopPropagation()"
+      >
+        <div class="mb-5 flex items-start justify-between gap-4">
+          <div>
+            <h2 class="text-lg font-semibold">
+              {{
+                dialog() === 'menu'
+                  ? editingMenuId()
+                    ? 'Editar item'
+                    : 'Adicionar item'
+                  : dialog() === 'courier'
+                    ? editingCourierId()
+                      ? 'Editar entregador'
+                      : 'Cadastrar entregador'
+                    : 'Registrar pedido'
+              }}
+            </h2>
+            <p class="mt-1 text-sm text-muted">As alterações ficam nesta demonstração local.</p>
+          </div>
+          <button
+            type="button"
+            aria-label="Fechar janela"
+            class="rounded-md p-2 text-muted hover:bg-field hover:text-ink"
+            (click)="closeDialog()"
+          >
+            <ng-icon name="lucideX" size="18" />
+          </button>
+        </div>
+
+        @if (dialog() === 'menu') {
+          <form class="space-y-4" novalidate (submit)="saveMenuItem($event)">
+            <label class="block"
+              ><span class="mb-1.5 block text-sm font-medium text-ink/80">Nome do item</span
+              ><input
+                [value]="menuDraft().name"
+                (input)="updateMenuDraft('name', $any($event.target).value)"
+                placeholder="Ex.: Parmegiana da casa"
+                class="h-10 w-full rounded-md border border-line bg-field px-3 text-sm text-ink outline-none focus:border-brand"
+            /></label>
+            <label class="block"
+              ><span class="mb-1.5 block text-sm font-medium text-ink/80">Descrição</span
+              ><textarea
+                rows="2"
+                [value]="menuDraft().description"
+                (input)="updateMenuDraft('description', $any($event.target).value)"
+                placeholder="Descreva ingredientes, tamanho ou acompanhamentos"
+                class="w-full resize-y rounded-md border border-line bg-field px-3 py-2 text-sm text-ink outline-none focus:border-brand"
+              ></textarea>
+            </label>
+            <div class="flex items-center gap-3 rounded-lg border border-dashed border-line p-3">
+              @if (menuDraft().imageUrl) {
+                <img
+                  [src]="menuDraft().imageUrl"
+                  alt="Prévia do item"
+                  class="size-16 rounded-md object-cover"
+                />
+              } @else {
+                <span
+                  class="flex size-16 items-center justify-center rounded-md bg-field text-muted"
+                  ><ng-icon name="lucideImagePlus" size="20"
+                /></span>
+              }
+              <label class="min-w-0 flex-1 text-sm">
+                <span class="block font-medium text-ink">Foto do produto</span>
+                <span class="mt-1 block text-xs text-muted">JPEG, PNG ou WebP · até 5 MB</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  class="mt-2 block w-full text-xs text-muted file:mr-3 file:rounded-md file:border-0 file:bg-brand/10 file:px-3 file:py-1.5 file:font-semibold file:text-brand"
+                  (change)="onMenuImageSelected($event)"
+                />
+              </label>
+            </div>
+            <label class="block"
+              ><span class="mb-1.5 block text-sm font-medium text-ink/80">Categoria</span
+              ><select
+                [value]="menuDraft().category"
+                (change)="updateMenuDraft('category', $any($event.target).value)"
+                class="h-10 w-full rounded-md border border-line bg-field px-3 text-sm text-ink outline-none focus:border-brand"
+              >
+                @for (category of menuCategories.slice(1); track category) {
+                  <option [value]="category">{{ category }}</option>
+                }
+              </select></label
+            >
+            <div class="grid gap-3 sm:grid-cols-3">
+              <label class="block"
+                ><span class="mb-1.5 block text-xs font-medium text-ink/80">Preço iFood</span
+                ><input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  [value]="menuDraft().ifoodPrice"
+                  (input)="updateMenuDraft('ifoodPrice', $any($event.target).value)"
+                  placeholder="0,00"
+                  class="h-10 w-full rounded-md border border-line bg-field px-3 text-sm text-ink outline-none focus:border-brand"
+              /></label>
+              <label class="block"
+                ><span class="mb-1.5 block text-xs font-medium text-ink/80">Preço 99Food</span
+                ><input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  [value]="menuDraft().food99Price"
+                  (input)="updateMenuDraft('food99Price', $any($event.target).value)"
+                  placeholder="0,00"
+                  class="h-10 w-full rounded-md border border-line bg-field px-3 text-sm text-ink outline-none focus:border-brand"
+              /></label>
+              <label class="block"
+                ><span class="mb-1.5 block text-xs font-medium text-ink/80">Preço Loja</span
+                ><input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  [value]="menuDraft().housePrice"
+                  (input)="updateMenuDraft('housePrice', $any($event.target).value)"
+                  placeholder="0,00"
+                  class="h-10 w-full rounded-md border border-line bg-field px-3 text-sm text-ink outline-none focus:border-brand"
+              /></label>
+            </div>
+            <section class="space-y-3 rounded-lg border border-line p-3">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h3 class="text-sm font-semibold text-ink">Grupos de opções</h3>
+                  <p class="mt-0.5 text-xs text-muted">Sabores, bordas, adicionais e bebidas</p>
+                </div>
+                <button
+                  type="button"
+                  class="inline-flex h-8 items-center gap-1.5 rounded-md border border-line px-2.5 text-xs font-semibold text-ink hover:bg-field"
+                  (click)="addModifierGroup()"
+                >
+                  <ng-icon name="lucidePlus" size="14" /> Novo grupo
+                </button>
+              </div>
+              @for (group of menuDraft().modifierGroups; track group.id) {
+                <fieldset class="space-y-3 rounded-md bg-field p-3">
+                  <div class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto_auto] sm:items-end">
+                    <label class="block"
+                      ><span class="mb-1 block text-xs font-medium text-muted">Nome do grupo</span
+                      ><input
+                        [value]="group.name"
+                        (input)="updateModifierGroup(group.id, 'name', $any($event.target).value)"
+                        placeholder="Ex.: Escolha os sabores"
+                        class="h-9 w-full rounded-md border border-line bg-surface px-2.5 text-sm text-ink outline-none focus:border-brand"
+                    /></label>
+                    <label class="flex h-9 items-center gap-2 text-xs text-ink"
+                      ><input
+                        type="checkbox"
+                        [checked]="group.required"
+                        (change)="
+                          updateModifierGroup(group.id, 'required', $any($event.target).checked)
+                        "
+                        class="size-4 accent-brand"
+                      />Obrigatório</label
+                    >
+                    <label class="block"
+                      ><span class="mb-1 block text-xs text-muted">Mín.</span
+                      ><input
+                        type="number"
+                        min="0"
+                        [value]="group.minSelect"
+                        (input)="
+                          updateModifierGroup(group.id, 'minSelect', $any($event.target).value)
+                        "
+                        class="h-9 w-16 rounded-md border border-line bg-surface px-2 text-sm text-ink"
+                    /></label>
+                    <label class="block"
+                      ><span class="mb-1 block text-xs text-muted">Máx.</span
+                      ><input
+                        type="number"
+                        min="1"
+                        [value]="group.maxSelect"
+                        (input)="
+                          updateModifierGroup(group.id, 'maxSelect', $any($event.target).value)
+                        "
+                        class="h-9 w-16 rounded-md border border-line bg-surface px-2 text-sm text-ink"
+                    /></label>
+                  </div>
+                  @for (option of group.options; track option.id) {
+                    <div class="grid grid-cols-[minmax(0,1fr)_6rem] gap-2">
+                      <input
+                        [value]="option.name"
+                        (input)="
+                          updateModifierOption(
+                            group.id,
+                            option.id,
+                            'name',
+                            $any($event.target).value
+                          )
+                        "
+                        placeholder="Nome da opção"
+                        class="h-9 rounded-md border border-line bg-surface px-2.5 text-sm text-ink outline-none focus:border-brand"
+                      />
+                      <input
+                        type="number"
+                        step="0.01"
+                        [value]="option.priceDelta"
+                        (input)="
+                          updateModifierOption(
+                            group.id,
+                            option.id,
+                            'priceDelta',
+                            $any($event.target).value
+                          )
+                        "
+                        aria-label="Valor adicional"
+                        class="h-9 rounded-md border border-line bg-surface px-2 text-sm text-ink outline-none focus:border-brand"
+                      />
+                    </div>
+                  }
+                  <div class="flex justify-between">
+                    <button
+                      type="button"
+                      class="text-xs font-semibold text-brand hover:text-brand-2"
+                      (click)="addModifierOption(group.id)"
+                    >
+                      + Adicionar opção
+                    </button>
+                    <button
+                      type="button"
+                      class="text-xs text-muted hover:text-red-600"
+                      (click)="removeModifierGroup(group.id)"
+                    >
+                      Remover grupo
+                    </button>
+                  </div>
+                </fieldset>
+              } @empty {
+                <p class="rounded-md bg-field p-3 text-xs text-muted">
+                  Sem modificadores. Crie grupos para sabores, bordas, pontos ou adicionais.
+                </p>
+              }
+            </section>
+            @if (dialogError()) {
+              <p class="text-sm text-red-600" role="alert">{{ dialogError() }}</p>
+            }
+            <div class="flex justify-end gap-2 border-t border-line pt-4">
+              <button
+                type="button"
+                class="h-9 rounded-md px-3 text-sm text-muted hover:bg-field"
+                (click)="closeDialog()"
+              >
+                Cancelar</button
+              ><button
+                type="submit"
+                class="h-9 rounded-md bg-brand px-4 text-sm font-semibold text-white hover:bg-brand/90"
+              >
+                Salvar item
+              </button>
+            </div>
+          </form>
+        } @else if (dialog() === 'courier') {
+          <form class="space-y-4" novalidate (submit)="saveCourier($event)">
+            @if (courierDraft().photoUrl) {
+              <img
+                [src]="courierDraft().photoUrl"
+                alt="Foto do entregador"
+                class="size-16 rounded-full object-cover"
+              />
+            }
+            <label class="block"
+              ><span class="mb-1.5 block text-sm font-medium text-ink/80"
+                >Foto de perfil · até 2 MB</span
+              ><input
+                type="file"
+                accept="image/*"
+                (change)="onCourierPhotoSelected($event)"
+                class="block w-full text-sm text-muted file:mr-3 file:rounded-md file:border file:border-line file:bg-field file:px-3 file:py-2"
+            /></label>
+            <label class="block"
+              ><span class="mb-1.5 block text-sm font-medium text-ink/80">Nome completo</span
+              ><input
+                [value]="courierDraft().name"
+                (input)="updateCourierDraft('name', $any($event.target).value)"
+                placeholder="Nome do entregador"
+                class="h-10 w-full rounded-md border border-line bg-field px-3 text-sm text-ink outline-none focus:border-brand"
+            /></label>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <label class="block"
+                ><span class="mb-1.5 block text-sm font-medium text-ink/80">CPF</span
+                ><input
+                  [value]="courierDraft().cpf"
+                  (input)="updateCourierDraft('cpf', $any($event.target).value)"
+                  inputmode="numeric"
+                  placeholder="000.000.000-00"
+                  class="h-10 w-full rounded-md border border-line bg-field px-3 text-sm text-ink"
+              /></label>
+              <label class="block"
+                ><span class="mb-1.5 block text-sm font-medium text-ink/80">Nascimento</span
+                ><input
+                  type="date"
+                  [value]="courierDraft().birthDate"
+                  (input)="updateCourierDraft('birthDate', $any($event.target).value)"
+                  class="h-10 w-full rounded-md border border-line bg-field px-3 text-sm text-ink"
+              /></label>
+              <label class="block"
+                ><span class="mb-1.5 block text-sm font-medium text-ink/80">Telefone</span
+                ><input
+                  type="tel"
+                  [value]="courierDraft().phone"
+                  (input)="updateCourierDraft('phone', $any($event.target).value)"
+                  placeholder="(11) 99999-9999"
+                  class="h-10 w-full rounded-md border border-line bg-field px-3 text-sm text-ink outline-none focus:border-brand"
+              /></label>
+              <label class="block"
+                ><span class="mb-1.5 block text-sm font-medium text-ink/80">E-mail</span
+                ><input
+                  type="email"
+                  [value]="courierDraft().email"
+                  (input)="updateCourierDraft('email', $any($event.target).value)"
+                  class="h-10 w-full rounded-md border border-line bg-field px-3 text-sm text-ink"
+              /></label>
+            </div>
+            <fieldset class="grid gap-3 rounded-lg border border-line p-3 sm:grid-cols-2">
+              <legend class="px-1 text-xs font-semibold text-muted">
+                Remuneração e recebimento
+              </legend>
+              <label class="block"
+                ><span class="mb-1 block text-xs text-muted">Modelo</span
+                ><select
+                  [value]="courierDraft().payModel"
+                  (change)="updateCourierDraft('payModel', $any($event.target).value)"
+                  class="h-10 w-full rounded-md border border-line bg-field px-3 text-sm text-ink"
+                >
+                  <option>Fixo por entrega</option>
+                  <option>% por pedido</option>
+                </select></label
+              >
+              <label class="block"
+                ><span class="mb-1 block text-xs text-muted">{{
+                  courierDraft().payModel === '% por pedido'
+                    ? 'Percentual'
+                    : 'Valor por entrega (R$)'
+                }}</span
+                ><input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  [value]="courierDraft().payValue"
+                  (input)="updateCourierDraft('payValue', $any($event.target).value)"
+                  class="h-10 w-full rounded-md border border-line bg-field px-3 text-sm text-ink"
+              /></label>
+              <label class="block"
+                ><span class="mb-1 block text-xs text-muted">Chave PIX</span
+                ><input
+                  [value]="courierDraft().pixKey"
+                  (input)="updateCourierDraft('pixKey', $any($event.target).value)"
+                  class="h-10 w-full rounded-md border border-line bg-field px-3 text-sm text-ink"
+              /></label>
+              <label class="block"
+                ><span class="mb-1 block text-xs text-muted">Titular da chave</span
+                ><input
+                  [value]="courierDraft().pixHolder"
+                  (input)="updateCourierDraft('pixHolder', $any($event.target).value)"
+                  class="h-10 w-full rounded-md border border-line bg-field px-3 text-sm text-ink"
+              /></label>
+            </fieldset>
+            @if (dialogError()) {
+              <p class="text-sm text-red-600" role="alert">{{ dialogError() }}</p>
+            }
+            <div class="flex justify-end gap-2 border-t border-line pt-4">
+              <button
+                type="button"
+                class="h-9 rounded-md px-3 text-sm text-muted hover:bg-field"
+                (click)="closeDialog()"
+              >
+                Cancelar</button
+              ><button
+                type="submit"
+                class="h-9 rounded-md bg-brand px-4 text-sm font-semibold text-white hover:bg-brand/90"
+              >
+                Salvar entregador
+              </button>
+            </div>
+          </form>
+        } @else {
+          <form class="space-y-4" novalidate (submit)="saveOrder($event)">
+            <p class="rounded-md bg-brand/10 px-3 py-2 text-xs font-semibold text-brand">
+              Pedido manual · Loja própria
+            </p>
+            <label class="block"
+              ><span class="mb-1.5 block text-sm font-medium text-ink/80">Nome do cliente</span
+              ><input
+                [value]="orderDraft().customer"
+                (input)="updateOrderDraft('customer', $any($event.target).value)"
+                placeholder="Cliente"
+                class="h-10 w-full rounded-md border border-line bg-field px-3 text-sm text-ink outline-none focus:border-brand"
+            /></label>
+            <div class="grid gap-3 sm:grid-cols-2">
+              <label class="block"
+                ><span class="mb-1.5 block text-xs font-medium text-ink/80">Telefone</span
+                ><input
+                  type="tel"
+                  [value]="orderDraft().phone"
+                  (input)="updateOrderDraft('phone', $any($event.target).value)"
+                  placeholder="(11) 99999-9999"
+                  class="h-10 w-full rounded-md border border-line bg-field px-3 text-sm text-ink outline-none focus:border-brand"
+              /></label>
+              <label class="block"
+                ><span class="mb-1.5 block text-xs font-medium text-ink/80"
+                  >Entrega ou retirada</span
+                ><select
+                  [value]="orderDraft().fulfillment"
+                  (change)="updateOrderDraft('fulfillment', $any($event.target).value)"
+                  class="h-10 w-full rounded-md border border-line bg-field px-3 text-sm text-ink outline-none focus:border-brand"
+                >
+                  <option value="delivery">Entrega</option>
+                  <option value="pickup">Retirada</option>
+                </select></label
+              >
+            </div>
+            @if (orderDraft().fulfillment === 'delivery') {
+              <label class="block"
+                ><span class="mb-1.5 block text-sm font-medium text-ink/80"
+                  >Endereço de entrega</span
+                ><input
+                  [value]="orderDraft().address"
+                  (input)="updateOrderDraft('address', $any($event.target).value)"
+                  placeholder="Rua, número, complemento e bairro"
+                  class="h-10 w-full rounded-md border border-line bg-field px-3 text-sm text-ink outline-none focus:border-brand"
+              /></label>
+            }
+            <section class="space-y-2 rounded-lg border border-line p-3">
+              <div class="flex items-center justify-between gap-2">
+                <div>
+                  <h3 class="text-sm font-semibold text-ink">Itens do pedido</h3>
+                  <p class="text-xs text-muted">
+                    {{ formatCurrency(manualOrderSubtotal()) }} subtotal
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  class="inline-flex h-8 items-center gap-1 rounded-md border border-line px-2.5 text-xs font-semibold"
+                  (click)="addManualOrderLine()"
+                >
+                  <ng-icon name="lucidePlus" size="14" /> Item
+                </button>
+              </div>
+              @for (line of manualOrderLines(); track $index; let index = $index) {
+                <div class="grid grid-cols-[minmax(0,1fr)_5rem_auto] gap-2">
+                  <select
+                    [value]="line.menuItemId ?? ''"
+                    (change)="updateManualOrderLine(index, 'menuItemId', $any($event.target).value)"
+                    aria-label="Produto do pedido"
+                    class="h-10 min-w-0 rounded-md border border-line bg-field px-2 text-sm text-ink"
+                  >
+                    <option value="">Selecione um produto</option>
+                    @for (item of menuItems(); track item.id) {
+                      @if (item.channels['Loja própria'].available) {
+                        <option [value]="item.id">
+                          {{ item.name }} ·
+                          {{ formatCurrency(item.channels['Loja própria'].price) }}
+                        </option>
+                      }
+                    }
+                  </select>
+                  <input
+                    type="number"
+                    min="1"
+                    [value]="line.quantity"
+                    (input)="updateManualOrderLine(index, 'quantity', $any($event.target).value)"
+                    aria-label="Quantidade"
+                    class="h-10 rounded-md border border-line bg-field px-2 text-sm text-ink"
+                  />
+                  <button
+                    type="button"
+                    aria-label="Remover linha"
+                    class="flex size-10 items-center justify-center rounded-md text-muted hover:bg-field hover:text-red-600"
+                    (click)="removeManualOrderLine(index)"
+                  >
+                    <ng-icon name="lucideTrash2" size="15" />
+                  </button>
+                </div>
+              }
+            </section>
+            <div class="grid gap-3 sm:grid-cols-3">
+              <label class="block"
+                ><span class="mb-1.5 block text-xs font-medium text-ink/80">Taxa de entrega</span
+                ><input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  [value]="orderDraft().deliveryFee"
+                  (input)="updateOrderDraft('deliveryFee', $any($event.target).value)"
+                  class="h-10 w-full rounded-md border border-line bg-field px-3 text-sm text-ink outline-none focus:border-brand"
+              /></label>
+              <label class="block"
+                ><span class="mb-1.5 block text-xs font-medium text-ink/80">Pagamento</span
+                ><select
+                  [value]="orderDraft().paymentMethod"
+                  (change)="updateOrderDraft('paymentMethod', $any($event.target).value)"
+                  class="h-10 w-full rounded-md border border-line bg-field px-3 text-sm text-ink outline-none focus:border-brand"
+                >
+                  <option>Pix</option>
+                  <option>Crédito</option>
+                  <option>Débito</option>
+                  <option>Dinheiro</option>
+                </select></label
+              >
+            </div>
+            @if (orderDraft().paymentMethod === 'Dinheiro') {
+              <label class="block"
+                ><span class="mb-1.5 block text-xs font-medium text-ink/80"
+                  >Troco para (opcional)</span
+                ><input
+                  type="number"
+                  min="0"
+                  [value]="orderDraft().changeFor"
+                  (input)="updateOrderDraft('changeFor', $any($event.target).value)"
+                  class="h-10 w-full rounded-md border border-line bg-field px-3 text-sm text-ink outline-none focus:border-brand"
+                  placeholder="Valor em R$"
+              /></label>
+            }
+            <label class="block"
+              ><span class="mb-1.5 block text-xs font-medium text-ink/80"
+                >Agendamento (opcional)</span
+              ><input
+                type="datetime-local"
+                [value]="orderDraft().scheduledAt"
+                (input)="updateOrderDraft('scheduledAt', $any($event.target).value)"
+                class="h-10 w-full rounded-md border border-line bg-field px-3 text-sm text-ink outline-none focus:border-brand"
+            /></label>
+            <label class="block"
+              ><span class="mb-1.5 block text-xs font-medium text-ink/80">Observações</span
+              ><textarea
+                rows="2"
+                [value]="orderDraft().notes"
+                (input)="updateOrderDraft('notes', $any($event.target).value)"
+                class="w-full resize-y rounded-md border border-line bg-field px-3 py-2 text-sm text-ink outline-none focus:border-brand"
+                placeholder="Instruções para cozinha ou entrega"
+              ></textarea>
+            </label>
+            @if (dialogError()) {
+              <p class="text-sm text-red-600" role="alert">{{ dialogError() }}</p>
+            }
+            <div class="flex justify-end gap-2 border-t border-line pt-4">
+              <button
+                type="button"
+                class="h-9 rounded-md px-3 text-sm text-muted hover:bg-field"
+                (click)="closeDialog()"
+              >
+                Cancelar</button
+              ><button
+                type="submit"
+                class="h-9 rounded-md bg-brand px-4 text-sm font-semibold text-white hover:bg-brand/90"
+              >
+                Criar pedido
+              </button>
+            </div>
+          </form>
+        }
+      </section>
+    </div>
+  }
+</div>

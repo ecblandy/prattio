@@ -1,0 +1,11 @@
+PRATTIO - IMAGENS DO SITE
+
+claro/   : versão para fundo claro (roxo + laranja)
+escuro/  : versão para fundo escuro (laranja + preto)
+comum/   : site.webmanifest
+
+Copie para public/ e use:
+  favicon.ico + favicon.svg           -> padrão (claro)
+  favicon-dark.svg                    -> modo escuro (via media query)
+  apple-touch-icon.png (claro) e apple-touch-icon-dark.png (escuro)
+  logos e og-image para o site

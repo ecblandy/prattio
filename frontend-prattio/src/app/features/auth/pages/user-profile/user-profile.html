@@ -1,0 +1,146 @@
+<section class="flex w-full max-w-sm flex-col items-center">
+  <div class="flex w-full flex-col items-center text-center">
+    <h1 class="text-2xl font-bold tracking-tight text-ink sm:text-3xl">Crie sua conta</h1>
+
+    <span class="mt-2 text-sm font-medium text-muted sm:text-base">
+      Como deseja utilizar a Prattio?
+    </span>
+
+    <div class="mt-6 h-1 w-12 rounded-full bg-brand"></div>
+  </div>
+
+  <div class="mt-10 flex w-full flex-col gap-4">
+    <!-- Cliente -->
+    <button
+      type="button"
+      (click)="selectUserProfile('client')"
+      [attr.aria-pressed]="selectedUserProfile() === 'client'"
+      class="flex w-full items-center gap-4 rounded-xl border p-4 text-left transition-all"
+      [class.border-brand]="selectedUserProfile() === 'client'"
+      [class.bg-brand/5]="selectedUserProfile() === 'client'"
+      [class.border-line]="selectedUserProfile() !== 'client'"
+      [class.bg-surface]="selectedUserProfile() !== 'client'"
+      [class.hover:border-muted]="selectedUserProfile() !== 'client'"
+    >
+      <div
+        class="flex size-12 shrink-0 items-center justify-center rounded-xl transition-colors"
+        [class.bg-brand/10]="selectedUserProfile() === 'client'"
+        [class.text-brand]="selectedUserProfile() === 'client'"
+        [class.bg-line]="selectedUserProfile() !== 'client'"
+        [class.text-muted]="selectedUserProfile() !== 'client'"
+      >
+        <ng-icon name="lucideUserRound" size="24" />
+      </div>
+
+      <div class="min-w-0 flex-1">
+        <span class="block text-sm font-bold text-ink"> Sou cliente </span>
+
+        <span class="mt-1 block text-xs leading-relaxed text-muted">
+          Quero descobrir restaurantes e fazer pedidos.
+        </span>
+      </div>
+
+      @if (selectedUserProfile() === 'client') {
+        <ng-icon name="lucideCircleCheck" size="22" class="shrink-0 text-brand" />
+      } @else {
+        <ng-icon name="lucideChevronRight" size="20" class="shrink-0 text-muted" />
+      }
+    </button>
+
+    <!-- Motoboy -->
+    <button
+      type="button"
+      (click)="selectUserProfile('motoboy')"
+      [attr.aria-pressed]="selectedUserProfile() === 'motoboy'"
+      class="flex w-full items-center gap-4 rounded-xl border p-4 text-left transition-all"
+      [class.border-brand]="selectedUserProfile() === 'motoboy'"
+      [class.bg-brand/5]="selectedUserProfile() === 'motoboy'"
+      [class.border-line]="selectedUserProfile() !== 'motoboy'"
+      [class.bg-surface]="selectedUserProfile() !== 'motoboy'"
+      [class.hover:border-muted]="selectedUserProfile() !== 'motoboy'"
+    >
+      <div
+        class="flex size-12 shrink-0 items-center justify-center rounded-xl transition-colors"
+        [class.bg-brand/10]="selectedUserProfile() === 'motoboy'"
+        [class.text-brand]="selectedUserProfile() === 'motoboy'"
+        [class.bg-line]="selectedUserProfile() !== 'motoboy'"
+        [class.text-muted]="selectedUserProfile() !== 'motoboy'"
+      >
+        <ng-icon name="lucideBike" size="24" />
+      </div>
+
+      <div class="min-w-0 flex-1">
+        <span class="block text-sm font-bold text-ink"> Sou motoboy </span>
+
+        <span class="mt-1 block text-xs leading-relaxed text-muted">
+          Quero realizar entregas e receber pedidos.
+        </span>
+      </div>
+
+      @if (selectedUserProfile() === 'motoboy') {
+        <ng-icon name="lucideCircleCheck" size="22" class="shrink-0 text-brand" />
+      } @else {
+        <ng-icon name="lucideChevronRight" size="20" class="shrink-0 text-muted" />
+      }
+    </button>
+
+    <!-- Restaurante -->
+    <button
+      type="button"
+      (click)="selectUserProfile('restaurant')"
+      [attr.aria-pressed]="selectedUserProfile() === 'restaurant'"
+      class="flex w-full items-center gap-4 rounded-xl border p-4 text-left transition-all"
+      [class.border-brand]="selectedUserProfile() === 'restaurant'"
+      [class.bg-brand/5]="selectedUserProfile() === 'restaurant'"
+      [class.border-line]="selectedUserProfile() !== 'restaurant'"
+      [class.bg-surface]="selectedUserProfile() !== 'restaurant'"
+      [class.hover:border-muted]="selectedUserProfile() !== 'restaurant'"
+    >
+      <div
+        class="flex size-12 shrink-0 items-center justify-center rounded-xl transition-colors"
+        [class.bg-brand/10]="selectedUserProfile() === 'restaurant'"
+        [class.text-brand]="selectedUserProfile() === 'restaurant'"
+        [class.bg-line]="selectedUserProfile() !== 'restaurant'"
+        [class.text-muted]="selectedUserProfile() !== 'restaurant'"
+      >
+        <ng-icon name="lucideStore" size="24" />
+      </div>
+
+      <div class="min-w-0 flex-1">
+        <span class="block text-sm font-bold text-ink"> Tenho um restaurante </span>
+
+        <span class="mt-1 block text-xs leading-relaxed text-muted">
+          Quero cadastrar meu estabelecimento na Prattio.
+        </span>
+      </div>
+
+      @if (selectedUserProfile() === 'restaurant') {
+        <ng-icon name="lucideCircleCheck" size="22" class="shrink-0 text-brand" />
+      } @else {
+        <ng-icon name="lucideChevronRight" size="20" class="shrink-0 text-muted" />
+      }
+    </button>
+  </div>
+
+  <div class="mt-8 w-full">
+    <button
+      type="button"
+      (click)="continueSignup()"
+      [disabled]="!selectedUserProfile()"
+      class="flex w-full items-center justify-center gap-2 rounded-xl bg-brand py-3.5 text-sm font-semibold text-white shadow-sm shadow-brand/20 transition-all hover:bg-brand/90 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50"
+    >
+      Continuar
+      <ng-icon name="lucideArrowRight" size="18" />
+    </button>
+
+    <p class="mt-6 text-center text-sm text-muted">
+      Já possui uma conta?
+      <a
+        routerLink="/auth/signin"
+        class="font-semibold text-brand transition-colors hover:text-brand-2 hover:underline"
+      >
+        Entrar
+      </a>
+    </p>
+  </div>
+</section>

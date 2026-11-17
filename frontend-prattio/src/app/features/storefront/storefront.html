@@ -1,0 +1,505 @@
+<main class="min-h-svh bg-page pb-24 text-ink lg:pb-10">
+  <header class="sticky top-0 z-30 border-b border-line bg-surface/95 backdrop-blur">
+    <div class="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4 sm:px-6">
+      <img
+        [src]="
+          theme.isDark()
+            ? '/assets/images/prattio-logos/logo-horizontal-dark.svg'
+            : '/assets/images/prattio-logos/logo-horizontal.svg'
+        "
+        alt="Prattio"
+        width="132"
+        height="40"
+        class="h-8 w-auto object-contain object-left"
+      />
+      <span class="hidden h-6 w-px bg-line sm:block"></span>
+      <span class="hidden min-w-0 flex-1 truncate text-sm font-medium text-muted sm:block">{{
+        restaurant.storeName()
+      }}</span>
+      <app-theme-toggle class="ml-auto" />
+      <button
+        type="button"
+        class="inline-flex h-10 items-center gap-2 rounded-lg bg-brand px-3 text-sm font-semibold text-white hover:bg-brand/90"
+        [disabled]="cartCount() === 0"
+        (click)="checkoutOpen.set(true)"
+      >
+        <ng-icon name="lucideShoppingBag" size="17" />
+        <span class="hidden sm:inline">Sacola</span>
+        <span class="rounded-full bg-white/20 px-1.5 py-0.5 text-xs">{{ cartCount() }}</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="mx-auto max-w-6xl px-4 sm:px-6">
+    <section class="store-hero mt-6 overflow-hidden rounded-xl border border-line bg-surface">
+      <div
+        class="flex flex-col justify-end gap-5 p-6 sm:min-h-64 sm:flex-row sm:items-end sm:justify-between sm:p-8"
+      >
+        <div>
+          <span
+            class="inline-flex items-center gap-2 rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-ink shadow-sm"
+          >
+            <span
+              class="size-2 rounded-full"
+              [class.bg-emerald-500]="restaurant.storeOpen()"
+              [class.bg-muted]="!restaurant.storeOpen()"
+            ></span>
+            {{ restaurant.storeOpen() ? 'Aberto agora' : 'Fechado no momento' }}
+          </span>
+          <h1 class="mt-4 text-3xl font-bold text-white sm:text-4xl">
+            {{ restaurant.storeName() }}
+          </h1>
+          <p class="mt-2 flex items-center gap-2 text-sm text-white/85">
+            <ng-icon name="lucideMapPin" size="16" /> {{ restaurant.storeAddress() }}
+          </p>
+        </div>
+        <div
+          class="flex items-center gap-5 rounded-lg bg-black/25 px-4 py-3 text-white backdrop-blur-sm"
+        >
+          <div>
+            <p class="text-xs text-white/70">Avaliação</p>
+            <p class="mt-1 text-sm font-semibold">4,8 <span class="text-amber-300">★</span></p>
+          </div>
+          <span class="h-8 w-px bg-white/25"></span>
+          <div>
+            <p class="text-xs text-white/70">Entrega</p>
+            <p class="mt-1 text-sm font-semibold">25–40 min</p>
+          </div>
+          <span class="h-8 w-px bg-white/25"></span>
+          <div>
+            <p class="text-xs text-white/70">Pedido mínimo</p>
+            <p class="mt-1 text-sm font-semibold">R$ 20,00</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="mt-8">
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p class="text-xs font-semibold uppercase text-brand-2">Cardápio próprio</p>
+          <h2 class="mt-1 text-xl font-bold text-ink">Escolha seus favoritos</h2>
+        </div>
+        <span class="flex items-center gap-2 text-xs text-muted"
+          ><ng-icon name="lucideClock" size="15" /> Atendimento de hoje</span
+        >
+      </div>
+      <div class="mt-5 flex gap-2 overflow-x-auto pb-2">
+        @for (category of categories(); track category) {
+          <button
+            type="button"
+            class="whitespace-nowrap rounded-full border px-4 py-2 text-sm font-medium transition-colors"
+            [class.border-brand]="selectedCategory() === category"
+            [class.bg-brand]="selectedCategory() === category"
+            [class.text-white]="selectedCategory() === category"
+            [class.border-line]="selectedCategory() !== category"
+            [class.bg-surface]="selectedCategory() !== category"
+            [class.text-muted]="selectedCategory() !== category"
+            (click)="selectedCategory.set(category)"
+          >
+            {{ category }}
+          </button>
+        }
+      </div>
+
+      <div class="mt-4 grid gap-3 md:grid-cols-2">
+        @for (item of availableProducts(); track item.id) {
+          <article
+            class="flex min-h-32 items-center gap-4 rounded-lg border border-line bg-surface p-4"
+          >
+            @if (item.imageUrl) {
+              <img
+                [src]="item.imageUrl"
+                [alt]="item.name"
+                class="size-20 shrink-0 rounded-lg object-cover sm:size-24"
+              />
+            } @else {
+              <div
+                class="flex size-20 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand sm:size-24"
+              >
+                <ng-icon name="lucideUtensils" size="23" />
+              </div>
+            }
+            <div class="min-w-0 flex-1">
+              <p class="text-xs font-medium text-muted">{{ item.category }}</p>
+              <h3 class="mt-1 font-semibold text-ink">{{ item.name }}</h3>
+              <p class="mt-1 line-clamp-2 text-xs leading-relaxed text-muted">
+                {{ item.description }}
+              </p>
+              <p class="mt-2 font-semibold text-brand">
+                {{ formatCurrency(item.channels['Loja própria'].price) }}
+              </p>
+            </div>
+            <div class="flex shrink-0 items-center gap-2">
+              <button
+                type="button"
+                class="inline-flex h-9 items-center gap-2 rounded-md bg-brand px-3 text-xs font-semibold text-white hover:bg-brand/90 disabled:cursor-not-allowed disabled:opacity-40"
+                [disabled]="!restaurant.storeOpen()"
+                [attr.aria-label]="'Personalizar ' + item.name"
+                (click)="openProduct(item)"
+              >
+                @if (quantityForItem(item.id) > 0) {
+                  {{ quantityForItem(item.id) }} na sacola
+                } @else {
+                  @if (item.modifierGroups.length > 0) {
+                    Personalizar
+                  } @else {
+                    Adicionar
+                  }
+                }
+              </button>
+            </div>
+          </article>
+        } @empty {
+          <p
+            class="rounded-lg border border-line bg-surface p-8 text-center text-sm text-muted md:col-span-2"
+          >
+            Não há itens disponíveis nesta categoria.
+          </p>
+        }
+      </div>
+    </section>
+
+    @if (cartCount() > 0) {
+      <button
+        type="button"
+        class="fixed inset-x-4 bottom-4 z-20 mx-auto flex h-12 max-w-lg items-center justify-between rounded-lg bg-brand px-4 text-sm font-semibold text-white shadow-xl lg:hidden"
+        (click)="checkoutOpen.set(true)"
+      >
+        <span>{{ cartCount() }} {{ cartCount() === 1 ? 'item' : 'itens' }} na sacola</span
+        ><span>{{ formatCurrency(total()) }} · Continuar</span>
+      </button>
+    }
+  </div>
+
+  @if (selectedProduct(); as product) {
+    <div
+      class="fixed inset-0 z-70 grid place-items-center overflow-y-auto bg-black/50 p-4"
+      (click)="closeProduct()"
+    >
+      <section
+        role="dialog"
+        aria-modal="true"
+        [attr.aria-label]="'Personalizar ' + product.name"
+        class="my-auto w-full max-w-xl rounded-xl border border-line bg-surface p-5 text-ink shadow-2xl"
+        (click)="$event.stopPropagation()"
+      >
+        <div class="flex items-start justify-between gap-4">
+          <div class="min-w-0">
+            <p class="text-xs font-semibold uppercase text-brand-2">{{ product.category }}</p>
+            <h2 class="mt-1 text-xl font-bold">{{ product.name }}</h2>
+            <p class="mt-2 text-sm leading-relaxed text-muted">{{ product.description }}</p>
+          </div>
+          <button
+            type="button"
+            class="rounded-md p-2 text-muted hover:bg-field"
+            aria-label="Fechar personalização"
+            (click)="closeProduct()"
+          >
+            <ng-icon name="lucideX" size="18" />
+          </button>
+        </div>
+        <div class="mt-4 max-h-[52svh] space-y-4 overflow-y-auto pr-1">
+          @for (group of product.modifierGroups; track group.id) {
+            <fieldset class="rounded-lg border border-line p-3">
+              <legend class="px-1 text-sm font-semibold">
+                {{ group.name }}
+                <span class="text-xs font-normal text-muted"
+                  >{{ group.required ? 'Obrigatório' : 'Opcional' }} · escolha
+                  {{ group.minSelect }}–{{ group.maxSelect }}</span
+                >
+              </legend>
+              <div class="mt-2 divide-y divide-line">
+                @for (option of group.options; track option.id) {
+                  <label class="flex cursor-pointer items-center gap-3 py-2.5 text-sm">
+                    <input
+                      [type]="group.maxSelect === 1 ? 'radio' : 'checkbox'"
+                      [name]="group.id"
+                      [checked]="optionSelected(group.id, option.id)"
+                      class="size-4 accent-brand"
+                      (change)="toggleOption(group, option)"
+                    />
+                    <span class="min-w-0 flex-1 text-ink">{{ option.name }}</span>
+                    @if (option.priceDelta !== 0) {
+                      <span class="text-xs font-medium text-muted"
+                        >+ {{ formatCurrency(option.priceDelta) }}</span
+                      >
+                    }
+                  </label>
+                }
+              </div>
+            </fieldset>
+          }
+          <label class="block"
+            ><span class="mb-1.5 block text-sm font-semibold">Observações deste item</span
+            ><textarea
+              rows="2"
+              [value]="productNote()"
+              (input)="productNote.set($any($event.target).value)"
+              class="w-full resize-y rounded-md border border-line bg-field px-3 py-2 text-sm outline-none focus:border-brand"
+              placeholder="Ex.: cortar em 4 pedaços"
+            ></textarea>
+          </label>
+        </div>
+        @if (selectionError()) {
+          <p class="mt-3 text-sm text-red-600" role="alert">{{ selectionError() }}</p>
+        }
+        <div
+          class="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4"
+        >
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              class="flex size-9 items-center justify-center rounded-md border border-line hover:bg-field"
+              aria-label="Diminuir quantidade"
+              (click)="changeProductQuantity(-1)"
+            >
+              <ng-icon name="lucideMinus" size="15" /></button
+            ><span class="min-w-6 text-center font-semibold">{{ productQuantity() }}</span
+            ><button
+              type="button"
+              class="flex size-9 items-center justify-center rounded-md border border-line hover:bg-field"
+              aria-label="Aumentar quantidade"
+              (click)="changeProductQuantity(1)"
+            >
+              <ng-icon name="lucidePlus" size="15" />
+            </button>
+          </div>
+          <button
+            type="button"
+            class="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-brand px-4 text-sm font-semibold text-white hover:bg-brand/90 sm:flex-none"
+            (click)="addConfiguredProduct()"
+          >
+            Adicionar · {{ formatCurrency(configuredUnitPrice() * productQuantity()) }}
+          </button>
+        </div>
+      </section>
+    </div>
+  }
+
+  @if (checkoutOpen()) {
+    <div
+      class="fixed inset-0 z-70 grid place-items-center overflow-y-auto bg-black/50 p-4"
+      (click)="checkoutOpen.set(false)"
+    >
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-label="Sua sacola"
+        class="my-auto w-full max-w-lg rounded-xl border border-line bg-surface p-5 text-ink shadow-2xl"
+        (click)="$event.stopPropagation()"
+      >
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <h2 class="text-lg font-bold">Sua sacola</h2>
+            <p class="mt-1 text-sm text-muted">{{ restaurant.storeName() }}</p>
+          </div>
+          <button
+            type="button"
+            aria-label="Fechar sacola"
+            class="rounded-md p-2 text-muted hover:bg-field"
+            (click)="checkoutOpen.set(false)"
+          >
+            <ng-icon name="lucideX" size="18" />
+          </button>
+        </div>
+        <div class="mt-4 max-h-56 space-y-3 overflow-y-auto border-y border-line py-4">
+          @for (line of cart(); track line.key) {
+            <div class="flex items-center gap-3">
+              <div class="min-w-0 flex-1">
+                <p class="truncate text-sm font-semibold">{{ line.name }}</p>
+                <p class="mt-0.5 text-xs text-muted">
+                  {{ line.quantity }} × {{ formatCurrency(line.unitPrice) }}
+                </p>
+                @if (line.options.length > 0) {
+                  <p class="mt-1 line-clamp-2 text-xs text-muted">{{ line.options.join(', ') }}</p>
+                }
+              </div>
+              <div class="flex items-center gap-2">
+                <button
+                  type="button"
+                  class="flex size-7 items-center justify-center rounded border border-line text-ink hover:bg-field"
+                  aria-label="Diminuir item"
+                  (click)="setQuantity(line.key, line.quantity - 1)"
+                >
+                  <ng-icon name="lucideMinus" size="14" />
+                </button>
+                <span class="text-xs font-semibold">{{ line.quantity }}</span>
+                <button
+                  type="button"
+                  class="flex size-7 items-center justify-center rounded border border-line text-ink hover:bg-field"
+                  aria-label="Aumentar item"
+                  (click)="setQuantity(line.key, line.quantity + 1)"
+                >
+                  <ng-icon name="lucidePlus" size="14" />
+                </button>
+              </div>
+              <span class="text-sm font-semibold">{{ formatCurrency(line.lineTotal) }}</span
+              ><button
+                type="button"
+                aria-label="Remover item"
+                class="rounded p-1 text-muted hover:text-red-600"
+                (click)="setQuantity(line.key, 0)"
+              >
+                <ng-icon name="lucideTrash2" size="15" />
+              </button>
+            </div>
+          }
+        </div>
+        <form class="mt-4 space-y-3" (submit)="submitOrder($event)">
+          <label class="block"
+            ><span class="mb-1 block text-xs font-semibold text-ink/80">Seu nome</span
+            ><input
+              [value]="customerName()"
+              (input)="customerName.set($any($event.target).value)"
+              autocomplete="name"
+              required
+              class="h-10 w-full rounded-md border border-line bg-field px-3 text-sm outline-none focus:border-brand"
+              placeholder="Nome para o pedido"
+          /></label>
+          <label class="block"
+            ><span class="mb-1 block text-xs font-semibold text-ink/80">Celular</span
+            ><input
+              [value]="customerPhone()"
+              (input)="customerPhone.set($any($event.target).value)"
+              inputmode="tel"
+              autocomplete="tel"
+              required
+              class="h-10 w-full rounded-md border border-line bg-field px-3 text-sm outline-none focus:border-brand"
+              placeholder="(11) 99999-9999"
+          /></label>
+          <label class="block"
+            ><span class="mb-1 block text-xs font-semibold text-ink/80">Tipo de recebimento</span
+            ><select
+              [value]="fulfillment()"
+              (change)="fulfillment.set($any($event.target).value)"
+              class="h-10 w-full rounded-md border border-line bg-field px-3 text-sm outline-none focus:border-brand"
+            >
+              <option value="delivery">Entrega</option>
+              <option value="pickup">Retirada no balcão</option>
+            </select></label
+          >
+          @if (fulfillment() === 'delivery') {
+            <label class="block"
+              ><span class="mb-1 block text-xs font-semibold text-ink/80">Endereço completo</span
+              ><input
+                [value]="customerAddress()"
+                (input)="customerAddress.set($any($event.target).value)"
+                autocomplete="street-address"
+                required
+                class="h-10 w-full rounded-md border border-line bg-field px-3 text-sm outline-none focus:border-brand"
+                placeholder="Rua, número, complemento e bairro"
+            /></label>
+          }
+          <div class="grid gap-3 sm:grid-cols-2">
+            <label class="block"
+              ><span class="mb-1 block text-xs font-semibold text-ink/80">Pagamento</span
+              ><select
+                [value]="paymentMethod()"
+                (change)="paymentMethod.set($any($event.target).value)"
+                class="h-10 w-full rounded-md border border-line bg-field px-3 text-sm outline-none focus:border-brand"
+              >
+                <option>Pix</option>
+                <option>Crédito</option>
+                <option>Débito</option>
+                <option>Dinheiro</option>
+              </select></label
+            >
+            @if (paymentMethod() === 'Dinheiro') {
+              <label class="block"
+                ><span class="mb-1 block text-xs font-semibold text-ink/80"
+                  >Troco para (opcional)</span
+                ><input
+                  type="number"
+                  min="0"
+                  [value]="changeFor()"
+                  (input)="changeFor.set($any($event.target).value)"
+                  class="h-10 w-full rounded-md border border-line bg-field px-3 text-sm outline-none focus:border-brand"
+                  placeholder="Valor em R$"
+              /></label>
+            }
+          </div>
+          <label class="block"
+            ><span class="mb-1 block text-xs font-semibold text-ink/80"
+              >Agendar pedido (opcional)</span
+            ><input
+              type="datetime-local"
+              [value]="scheduledAt()"
+              (input)="scheduledAt.set($any($event.target).value)"
+              class="h-10 w-full rounded-md border border-line bg-field px-3 text-sm outline-none focus:border-brand"
+          /></label>
+          <label class="block"
+            ><span class="mb-1 block text-xs font-semibold text-ink/80">Observações</span
+            ><textarea
+              rows="2"
+              [value]="notes()"
+              (input)="notes.set($any($event.target).value)"
+              class="w-full resize-y rounded-md border border-line bg-field px-3 py-2 text-sm outline-none focus:border-brand"
+              placeholder="Instruções para a loja"
+            ></textarea>
+          </label>
+          <div class="space-y-1 border-t border-line pt-3 text-sm">
+            <div class="flex justify-between text-muted">
+              <span>Subtotal</span><span>{{ formatCurrency(subtotal()) }}</span>
+            </div>
+            @if (fulfillment() === 'delivery') {
+              <div class="flex justify-between text-muted">
+                <span>Entrega</span><span>{{ formatCurrency(deliveryFee) }}</span>
+              </div>
+            }
+            <div class="flex items-center justify-between pt-1">
+              <span class="text-sm font-semibold">Total</span
+              ><span class="text-lg font-bold">{{ formatCurrency(total()) }}</span>
+            </div>
+          </div>
+          <button
+            type="submit"
+            class="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-brand text-sm font-semibold text-white hover:bg-brand/90 disabled:opacity-50"
+            [disabled]="!restaurant.storeOpen() || !meetsMinimum()"
+          >
+            Enviar pedido <ng-icon name="lucideArrowRight" size="17" />
+          </button>
+          <p class="text-center text-[11px] leading-relaxed text-muted">
+            O pedido será confirmado pela loja. O pagamento é combinado no canal escolhido.
+          </p>
+        </form>
+      </section>
+    </div>
+  }
+  @if (orderConfirmation(); as order) {
+    <div class="fixed inset-0 z-80 grid place-items-center bg-black/55 p-4">
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-label="Pedido confirmado"
+        class="w-full max-w-sm rounded-xl border border-line bg-surface p-6 text-center text-ink shadow-2xl"
+      >
+        <span
+          class="mx-auto grid size-12 place-items-center rounded-full bg-emerald-100 text-emerald-800"
+        >
+          <ng-icon name="lucideCircleCheck" size="24" />
+        </span>
+        <p class="mt-4 text-xs font-bold uppercase tracking-wide text-brand-2">Pedido recebido</p>
+        <h2 class="mt-1 text-xl font-bold">Pedido #{{ order.id }}</h2>
+        @if (order.deliveryCode) {
+          <p class="mt-5 text-sm text-muted">Código para confirmar a entrega</p>
+          <p class="mt-1 font-mono text-4xl font-extrabold tracking-[0.3em] text-ink">
+            {{ order.deliveryCode }}
+          </p>
+          <p class="mt-3 text-xs leading-relaxed text-muted">
+            Guarde este código e informe ao motoboy somente quando receber o pedido.
+          </p>
+        } @else {
+          <p class="mt-4 text-sm text-muted">Seu pedido está aguardando confirmação da loja.</p>
+        }
+        <button
+          type="button"
+          class="mt-6 h-11 w-full rounded-md bg-brand px-4 text-sm font-bold text-white"
+          (click)="closeOrderConfirmation()"
+        >
+          Entendi
+        </button>
+      </section>
+    </div>
+  }
+</main>

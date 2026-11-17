@@ -1,0 +1,23 @@
+<div class="toast-stack" aria-live="polite" aria-relevant="additions text" aria-atomic="false">
+  @for (toast of toastService.toasts(); track toast.id) {
+    <div
+      class="toast-item flex items-start gap-3 rounded-lg border border-line border-l-4 bg-surface p-3.5 text-ink shadow-lg"
+      [class.border-l-brand]="toast.kind === 'success'"
+      [class.border-l-brand-2]="toast.kind === 'info'"
+      [class.border-l-amber-500]="toast.kind === 'warning'"
+      [class.border-l-red-500]="toast.kind === 'error'"
+      [attr.role]="toast.kind === 'error' ? 'alert' : 'status'"
+    >
+      <ng-icon [name]="iconFor(toast.kind)" size="19" class="mt-0.5 shrink-0 text-brand" />
+      <p class="min-w-0 flex-1 text-sm leading-relaxed">{{ toast.message }}</p>
+      <button
+        type="button"
+        aria-label="Fechar notificação"
+        class="shrink-0 rounded p-1 text-muted transition-colors hover:bg-field hover:text-ink"
+        (click)="dismiss(toast.id)"
+      >
+        <ng-icon name="lucideX" size="16" />
+      </button>
+    </div>
+  }
+</div>

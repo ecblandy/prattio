@@ -1,0 +1,5 @@
+@media (prefers-reduced-motion: reduce) {
+  :host ::ng-deep .animate-spin {
+    animation: none;
+  }
+}

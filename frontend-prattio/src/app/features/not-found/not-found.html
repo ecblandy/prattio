@@ -1,0 +1,35 @@
+<main class="min-h-svh bg-page px-6 text-ink">
+  <header class="mx-auto flex h-16 max-w-7xl items-center justify-between border-b border-line">
+    <a routerLink="/auth/signin" class="flex items-center gap-2 font-bold text-ink">
+      <span class="flex size-8 items-center justify-center rounded-md bg-brand text-sm text-white"
+        >P</span
+      >
+      prattio
+    </a>
+    <app-theme-toggle />
+  </header>
+
+  <section
+    class="mx-auto flex min-h-[calc(100svh-4rem)] max-w-lg flex-col items-center justify-center py-16 text-center"
+  >
+    <span class="text-sm font-bold uppercase text-brand-2">Erro 404</span>
+    <h1 class="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Esta página não existe</h1>
+    <p class="mt-3 max-w-sm text-sm leading-relaxed text-muted">
+      O endereço pode ter mudado ou não está disponível. Volte ao início ou abra o painel da loja.
+    </p>
+    <div class="mt-8 flex flex-wrap justify-center gap-3">
+      <a
+        routerLink="/auth/signin"
+        class="inline-flex h-10 items-center gap-2 rounded-lg border border-line bg-surface px-4 text-sm font-semibold text-ink hover:bg-field"
+      >
+        <ng-icon name="lucideHouse" size="16" /> Entrar
+      </a>
+      <a
+        routerLink="/restaurant"
+        class="inline-flex h-10 items-center gap-2 rounded-lg bg-brand px-4 text-sm font-semibold text-white hover:bg-brand/90"
+      >
+        Abrir painel <ng-icon name="lucideArrowRight" size="16" />
+      </a>
+    </div>
+  </section>
+</main>

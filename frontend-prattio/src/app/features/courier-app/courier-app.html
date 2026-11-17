@@ -1,0 +1,389 @@
+<main class="courier-app min-h-svh bg-page pb-10 text-ink">
+  <header class="sticky top-0 z-30 border-b border-line bg-surface/95 backdrop-blur">
+    <div class="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 sm:px-6">
+      <img
+        [src]="
+          theme.isDark()
+            ? '/assets/images/prattio-logos/logo-horizontal-dark.svg'
+            : '/assets/images/prattio-logos/logo-horizontal.svg'
+        "
+        alt="Prattio"
+        width="132"
+        height="40"
+        class="h-8 w-auto object-contain object-left"
+      />
+      <span class="ml-auto text-sm font-semibold">Prattio Entregas</span>
+      <app-theme-toggle />
+    </div>
+  </header>
+
+  <div class="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:py-7">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-wide text-brand-2">
+          Painel do entregador
+        </p>
+        <h1 class="mt-1 text-3xl font-bold">Olá, {{ accountName() }}</h1>
+        @if (mode() === 'Loja' && selectedCourier()?.email) {
+          <p class="mt-1 text-sm text-muted">{{ selectedCourier()?.email }}</p>
+        }
+      </div>
+      <button
+        type="button"
+        role="switch"
+        [attr.aria-checked]="online()"
+        class="courier-connect inline-flex min-h-14 items-center gap-3 px-5 py-3 text-left text-sm font-bold text-white"
+        [class.is-online]="online()"
+        (click)="setOnline(!online())"
+      >
+        <span class="size-3 rounded-full bg-white" [class.animate-pulse]="online()"></span>
+        <span
+          ><strong class="block">{{
+            online() ? 'Você está conectado' : 'Conectar para entregar'
+          }}</strong
+          ><span class="text-xs font-medium text-white/75">{{
+            online() ? 'Disponível para novas entregas' : 'Fique disponível para receber pedidos'
+          }}</span></span
+        >
+      </button>
+    </div>
+
+    <div class="mt-5 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
+      <section class="courier-earnings flex flex-wrap items-end justify-between gap-4 p-5 sm:p-6">
+        <div>
+          <p class="text-xs font-bold uppercase tracking-wide text-white/65">Ganhos registrados</p>
+          <p class="mt-1 text-4xl font-extrabold tabular-nums text-white">
+            {{ formatCurrency(earnedAmount()) }}
+          </p>
+          <p class="mt-1 text-sm text-white/70">
+            {{ completedCount() }} entregas concluídas nesta sessão
+          </p>
+        </div>
+        <div class="border-l border-white/20 pl-4 text-sm text-white/80">
+          @if (mode() === 'Loja') {
+            <span class="block">{{ payRateLabel() }}</span>
+          }
+          <span class="mt-1 block text-xs">Repasse local de demonstração</span>
+        </div>
+      </section>
+      <div class="grid grid-cols-2 gap-2 rounded-lg bg-field p-1 lg:w-64">
+        <button
+          type="button"
+          class="rounded-md px-3 text-sm font-semibold"
+          [class.bg-surface]="mode() === 'Loja'"
+          [class.shadow-sm]="mode() === 'Loja'"
+          (click)="setMode('Loja')"
+        >
+          Da loja
+        </button>
+        <button
+          type="button"
+          class="rounded-md px-3 text-sm font-semibold"
+          [class.bg-surface]="mode() === 'Parceiro'"
+          [class.shadow-sm]="mode() === 'Parceiro'"
+          (click)="setMode('Parceiro')"
+        >
+          Parceiro
+        </button>
+      </div>
+    </div>
+
+    <div class="mt-3 flex flex-wrap items-center gap-3">
+      @if (mode() === 'Loja') {
+        <label class="flex items-center gap-2 text-xs font-semibold text-muted"
+          ><span>Conta de courier</span
+          ><select
+            [value]="courierId()"
+            (change)="courierId.set(+$any($event.target).value)"
+            class="h-9 max-w-64 rounded-md border border-line bg-surface px-2 text-sm text-ink"
+          >
+            @for (courier of data.storeCouriers(); track courier.id) {
+              <option [value]="courier.id" [disabled]="!courier.active">
+                {{ courier.name }}{{ courier.active ? '' : ' · pausado' }}
+              </option>
+            }
+          </select></label
+        >
+      } @else {
+        <label class="flex items-center gap-2 text-xs font-semibold text-muted"
+          ><span>Nome do parceiro</span
+          ><input
+            [value]="partnerName()"
+            (input)="partnerName.set($any($event.target).value)"
+            class="h-9 rounded-md border border-line bg-surface px-2 text-sm text-ink"
+        /></label>
+      }
+      <span
+        class="rounded-full border border-line bg-surface px-3 py-1.5 text-xs font-semibold text-muted"
+        >{{ activeJobs().length }} tarefas ativas</span
+      >
+    </div>
+
+    <div class="mt-5 grid items-start gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(380px,0.85fr)]">
+      <section class="overflow-hidden border border-line bg-surface">
+        <div class="flex items-center justify-between gap-3 border-b border-line px-4 py-3 sm:px-5">
+          <div>
+            <h2 class="font-bold">Mapa da rota</h2>
+            <p class="mt-0.5 text-xs text-muted">Prévia ilustrativa · destinos abrem no mapa</p>
+          </div>
+          <span class="rounded-full bg-brand/10 px-3 py-1 text-xs font-bold text-brand">{{
+            activeJobs().length ? activeJobs().length + ' paradas' : 'Exemplo de rota'
+          }}</span>
+        </div>
+        <div class="courier-map relative">
+          <svg
+            class="absolute inset-0 size-full"
+            viewBox="0 0 820 440"
+            preserveAspectRatio="xMidYMid slice"
+            aria-hidden="true"
+          >
+            <path
+              d="M-30 95 C120 115 170 20 285 40 S470 170 850 85 M-20 305 C155 270 230 345 365 265 S620 210 850 335 M115 -20 C180 90 110 190 190 460 M415 -20 C355 85 470 165 420 460 M670 -10 C590 105 715 210 640 450"
+              fill="none"
+              stroke="#ffffff"
+              stroke-width="28"
+              stroke-linecap="round"
+            />
+            <path
+              d="M-30 95 C120 115 170 20 285 40 S470 170 850 85 M-20 305 C155 270 230 345 365 265 S620 210 850 335 M115 -20 C180 90 110 190 190 460 M415 -20 C355 85 470 165 420 460 M670 -10 C590 105 715 210 640 450"
+              fill="none"
+              stroke="#d5ded6"
+              stroke-width="2"
+            />
+            <path
+              d="M190 292 C280 245 330 155 420 150 S545 190 602 112"
+              fill="none"
+              stroke="#df6544"
+              stroke-width="7"
+              stroke-linecap="round"
+              stroke-dasharray="1 1"
+            />
+            <circle cx="190" cy="292" r="18" fill="#df6544" stroke="white" stroke-width="6" />
+            <circle cx="602" cy="112" r="18" fill="#397d64" stroke="white" stroke-width="6" />
+          </svg>
+          <div
+            class="absolute left-4 top-4 rounded-md bg-white/90 px-3 py-2 text-xs font-bold text-ink shadow-sm"
+          >
+            {{ activeJobs().length ? 'Rota ativa' : 'Prévia demonstrativa' }}
+          </div>
+          <div
+            class="absolute bottom-4 right-4 rounded-md bg-white/90 px-3 py-2 text-xs font-semibold text-ink shadow-sm"
+          >
+            {{ online() ? 'Localização não compartilhada' : 'Offline' }}
+          </div>
+        </div>
+        <div class="grid gap-2 border-t border-line p-3 sm:grid-cols-2">
+          @if (activeJobs().length) {
+            @for (job of activeJobs(); track job.orderId) {
+              <a
+                [href]="mapUrl(job.address)"
+                target="_blank"
+                rel="noopener"
+                class="flex items-center gap-3 border border-line p-3 hover:bg-field"
+                ><span
+                  class="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand"
+                  ><ng-icon name="lucideMapPin" size="16" /></span
+                ><span class="min-w-0"
+                  ><strong class="block text-sm text-ink">Pedido #{{ job.orderId }}</strong
+                  ><span class="block truncate text-xs text-muted">{{ job.address }}</span></span
+                ></a
+              >
+            }
+          } @else {
+            @for (task of sampleTasks; track task.id) {
+              <div class="flex items-center gap-3 border border-dashed border-line p-3">
+                <span
+                  class="flex size-8 shrink-0 items-center justify-center rounded-full bg-field text-muted"
+                  ><ng-icon name="lucideMapPin" size="16" /></span
+                ><span class="min-w-0"
+                  ><strong class="block text-sm text-ink">{{ task.status }}</strong
+                  ><span class="block truncate text-xs text-muted">{{ task.address }}</span></span
+                >
+              </div>
+            }
+          }
+        </div>
+      </section>
+
+      <aside class="space-y-4">
+        @if (mode() === 'Parceiro') {
+          <section class="border border-line bg-surface p-4 sm:p-5">
+            <div class="mb-3 flex items-center justify-between">
+              <h2 class="font-bold">Ofertas disponíveis</h2>
+              <span class="text-xs text-muted">{{ availableOffers().length }}</span>
+            </div>
+            @for (offer of availableOffers(); track offer.orderId) {
+              <article class="border-t border-line py-3">
+                <div class="flex justify-between gap-2">
+                  <div>
+                    <p class="font-semibold">{{ offer.storeName }} · #{{ offer.orderId }}</p>
+                    <p class="mt-1 text-xs text-muted">{{ offer.items }}</p>
+                  </div>
+                  <strong>{{ formatCurrency(offer.deliveryFee) }}</strong>
+                </div>
+                <a
+                  [href]="mapUrl(offer.address)"
+                  target="_blank"
+                  rel="noopener"
+                  class="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-brand"
+                  ><ng-icon name="lucideMapPin" size="14" /> Ver endereço</a
+                ><button
+                  type="button"
+                  class="mt-3 h-10 w-full bg-brand text-sm font-bold text-white"
+                  (click)="acceptOffer(offer.orderId)"
+                >
+                  Aceitar oferta
+                </button>
+              </article>
+            } @empty {
+              @for (offer of sampleOffers; track offer.orderId) {
+                <article class="border-t border-line py-3">
+                  <div class="flex items-start justify-between gap-2">
+                    <div>
+                      <span
+                        class="rounded bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-900"
+                        >Exemplo</span
+                      >
+                      <p class="mt-2 font-semibold">{{ offer.storeName }}</p>
+                      <p class="mt-1 text-xs text-muted">{{ offer.items }} · {{ offer.address }}</p>
+                    </div>
+                    <strong>{{ formatCurrency(offer.deliveryFee) }}</strong>
+                  </div>
+                  <button
+                    type="button"
+                    disabled
+                    class="mt-3 h-10 w-full border border-line text-sm font-semibold text-muted"
+                  >
+                    Prévia · sem aceite real
+                  </button>
+                </article>
+              }
+            }
+          </section>
+        }
+
+        <section class="border border-line bg-surface p-4 sm:p-5">
+          <div class="mb-3 flex items-center justify-between">
+            <div>
+              <h2 class="font-bold">
+                {{ activeJobs().length ? 'Suas entregas' : 'Exemplos de entregas' }}
+              </h2>
+              <p class="mt-1 text-xs text-muted">
+                {{
+                  activeJobs().length
+                    ? 'Tarefas vinculadas a esta conta'
+                    : 'Prévia; não são pedidos ativos'
+                }}
+              </p>
+            </div>
+            <span class="text-xs font-semibold text-muted">{{
+              activeJobs().length || sampleTasks.length
+            }}</span>
+          </div>
+          @for (job of activeJobs(); track job.orderId) {
+            <article class="border-t border-line py-4">
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <p class="text-xs font-bold uppercase text-brand-2">
+                    {{ job.routeId }} · Pedido #{{ job.orderId }}
+                  </p>
+                  <h3 class="mt-1 font-semibold">{{ job.customer }}</h3>
+                  <p class="mt-1 text-sm text-muted">{{ job.items }}</p>
+                </div>
+                <span class="rounded-full bg-field px-2.5 py-1 text-xs font-bold">{{
+                  job.status
+                }}</span>
+              </div>
+              <div class="mt-3 grid grid-cols-2 gap-2 border-y border-line py-2 text-xs">
+                <p>
+                  <span class="block text-muted">Associado</span
+                  ><strong>{{ timeLabel(job.assignedAt) }}</strong>
+                </p>
+                <p>
+                  <span class="block text-muted">Chegada à loja</span
+                  ><strong>{{ timeLabel(job.arrivedAt) }}</strong>
+                </p>
+                <p>
+                  <span class="block text-muted">Espera na loja</span
+                  ><strong>{{
+                    elapsedSince(job.arrivedAt) === null
+                      ? 'Não registrada'
+                      : elapsedSince(job.arrivedAt) + ' min'
+                  }}</strong>
+                </p>
+                <p>
+                  <span class="block text-muted">Saída</span
+                  ><strong>{{ timeLabel(job.departedAt) }}</strong>
+                </p>
+              </div>
+              @if (routeJobs(job).length > 1) {
+                <p class="mt-2 text-xs font-semibold text-brand">
+                  Também nesta rota: #{{ routeJobs(job).map(routeJob => routeJob.orderId).join(', #') }}
+                </p>
+              }
+              <div class="mt-3 flex flex-wrap gap-2">
+                <a
+                  [href]="mapUrl(job.address)"
+                  target="_blank"
+                  rel="noopener"
+                  class="inline-flex h-10 flex-1 items-center justify-center gap-2 border border-line text-sm font-semibold"
+                  ><ng-icon name="lucideMapPin" size="16" />Abrir no mapa</a
+                ><button
+                  type="button"
+                  class="h-10 flex-1 bg-brand px-3 text-sm font-bold text-white"
+                  (click)="advanceJob(job)"
+                >
+                  {{ actionLabel(job) }}
+                </button>
+              </div>
+              <label
+                class="mt-2 flex h-10 cursor-pointer items-center justify-center gap-2 border border-line text-sm font-semibold"
+                ><ng-icon name="lucideCamera" size="16" />{{
+                  job.proofImage ? 'Atualizar comprovante' : 'Foto do comprovante'
+                }}<input
+                  type="file"
+                  accept="image/*"
+                  class="sr-only"
+                  (change)="onProofSelected(job, $event)"
+              /></label>
+              @if (job.proofImage) {
+                <img
+                  [src]="job.proofImage"
+                  alt="Comprovante da entrega"
+                  class="mt-3 h-36 w-full object-cover"
+                />
+              }
+            </article>
+          } @empty {
+            @for (task of sampleTasks; track task.id) {
+              <article class="border-t border-line py-4">
+                <div class="flex items-start justify-between gap-3">
+                  <div>
+                    <span
+                      class="rounded bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-900"
+                      >Exemplo</span
+                    >
+                    <p class="mt-2 text-xs font-bold uppercase text-brand-2">
+                      {{ task.routeId }} · Pedido #{{ task.id }}
+                    </p>
+                    <h3 class="mt-1 font-semibold">{{ task.store }}</h3>
+                    <p class="mt-1 text-sm text-muted">{{ task.items }}</p>
+                  </div>
+                  <strong class="text-sm">{{ formatCurrency(task.reward) }}</strong>
+                </div>
+                <p class="mt-2 text-xs text-muted">{{ task.status }} · {{ task.address }}</p>
+                <button
+                  type="button"
+                  disabled
+                  class="mt-3 h-10 w-full border border-line text-sm font-semibold text-muted"
+                >
+                  Prévia · sem ação real
+                </button>
+              </article>
+            }
+          }
+        </section>
+      </aside>
+    </div>
+  </div>
+</main>
