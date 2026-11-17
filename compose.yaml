@@ -1,0 +1,76 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: prattio
+      POSTGRES_USER: prattio
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no arquivo .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./drizzle/0000_users.sql:/docker-entrypoint-initdb.d/0000_users.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U prattio -d prattio"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  migrate:
+    build:
+      context: .
+    environment:
+      DATABASE_URL: postgresql://prattio:${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no arquivo .env}@db:5432/prattio
+    command: ["node", "scripts/migrate.mjs"]
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  seed:
+    build:
+      context: .
+    environment:
+      DATABASE_URL: postgresql://prattio:${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no arquivo .env}@db:5432/prattio
+      TEST_USER_EMAIL: ${TEST_USER_EMAIL:?Defina TEST_USER_EMAIL no arquivo .env}
+      TEST_USER_PASSWORD: ${TEST_USER_PASSWORD:?Defina TEST_USER_PASSWORD no arquivo .env}
+      TEST_STORE_USER_EMAIL: ${TEST_STORE_USER_EMAIL:?Defina TEST_STORE_USER_EMAIL no arquivo .env}
+      TEST_STORE_USER_PASSWORD: ${TEST_STORE_USER_PASSWORD:?Defina TEST_STORE_USER_PASSWORD no arquivo .env}
+    command: ["node", "scripts/create-test-user.mjs"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: "no"
+
+  api:
+    build:
+      context: .
+    environment:
+      DATABASE_URL: postgresql://prattio:${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no arquivo .env}@db:5432/prattio
+      JWT_SECRET: ${JWT_SECRET:?Defina JWT_SECRET no arquivo .env}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-nao-responda@codelab.services}
+      PUBLIC_APP_URL: ${PUBLIC_APP_URL:-http://127.0.0.1:18080}
+      FRONTEND_ORIGINS: ${FRONTEND_ORIGINS:-}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
+      PORT: "3000"
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/').then(r => { if (!r.ok) process.exit(1) }).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  frontend:
+    build:
+      context: ../frontend-prattio
+    ports:
+      - "127.0.0.1:18080:80"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
