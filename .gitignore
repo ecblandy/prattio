@@ -1,0 +1,10 @@
+.env
+.env.*
+!.env.example
+*.tsbuildinfo
+*.pem
+*.key
+*.p12
+*.pfx
+/vinicius76
+/vinicius76..pub
