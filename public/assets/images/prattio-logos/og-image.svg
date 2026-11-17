@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <rect width="1200" height="630" fill="#FFFFFF"/>
+  <g transform="translate(330,165) scale(1.6)">
+    <rect width="150" height="150" rx="36" fill="#3D0457"/>
+    <rect x="44" y="30" width="20" height="104" rx="4" fill="#FFFFFF"/>
+    <circle cx="92" cy="75" r="30" fill="none" stroke="#FFFFFF" stroke-width="20"/>
+    <circle cx="122" cy="32" r="11" fill="#FF6B00"/>
+  </g>
+  <text x="600" y="530" text-anchor="middle" font-family="Poppins, Montserrat, Arial, sans-serif" font-weight="600" font-size="64" fill="#3D0457" letter-spacing="-2">prattio</text>
+  <text x="600" y="590" text-anchor="middle" font-family="Poppins, Montserrat, Arial, sans-serif" font-weight="400" font-size="28" fill="#6B6B6B">Gestão de estabelecimentos e delivery</text>
+</svg>

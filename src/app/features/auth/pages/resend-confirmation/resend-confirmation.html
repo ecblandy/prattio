@@ -1,0 +1,35 @@
+<section class="flex w-full max-w-sm flex-col items-center">
+  <div class="flex w-full flex-col items-center text-center">
+    <ng-icon name="lucideMailCheck" size="32" class="text-brand" aria-hidden="true" />
+    <h1 class="mt-4 text-2xl font-bold text-ink">Confirme seu e-mail</h1>
+    <p class="mt-2 text-sm leading-relaxed text-muted">
+      Confira sua caixa de entrada e o spam. Se precisar de um novo link, informe seu e-mail abaixo.
+    </p>
+  </div>
+
+  <form class="mt-8 w-full" (submit)="onSubmit($event)" novalidate>
+    <label for="confirmation-email" class="text-sm font-semibold text-ink/80">E-mail</label>
+    <input id="confirmation-email" type="email" autocomplete="email" placeholder="Digite seu e-mail" [formField]="form.email"
+      class="mt-2 w-full rounded-xl border border-line bg-field px-4 py-3.5 text-sm text-ink outline-none focus:border-brand focus:ring-4 focus:ring-brand/10" />
+    <app-field-errors [touched]="form.email().touched()" [errors]="form.email().errors()" />
+
+    @if (message()) {
+      <p class="mt-4 text-sm text-ink" role="status">{{ message() }}</p>
+    }
+    @if (error()) {
+      <p class="mt-4 text-sm text-red-600" role="alert">{{ error() }}</p>
+    }
+
+    <button type="submit" [disabled]="form().submitting()" [attr.aria-busy]="form().submitting()"
+      class="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-brand py-3.5 text-sm font-semibold text-white transition-all hover:bg-brand/90 disabled:cursor-not-allowed disabled:opacity-60">
+      @if (form().submitting()) {
+        <ng-icon name="lucideLoaderCircle" size="18" class="motion-safe:animate-spin" aria-hidden="true" />
+        Enviando...
+      } @else {
+        Reenviar link
+      }
+    </button>
+  </form>
+
+  <a routerLink="/auth/signin" class="mt-6 text-sm font-semibold text-brand hover:underline">Voltar para o login</a>
+</section>

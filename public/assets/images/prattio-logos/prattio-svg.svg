@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Ícone Prattio</title>
+  <desc id="desc">Símbolo P em roxo com detalhe laranja, sem fundo.</desc>
+  <defs>
+    <linearGradient id="purple" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8B16F5"/>
+      <stop offset="1" stop-color="#6500C8"/>
+    </linearGradient>
+    <linearGradient id="orange" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FF9A00"/>
+      <stop offset="1" stop-color="#FF4B16"/>
+    </linearGradient>
+  </defs>
+
+  <path fill="url(#purple)" fill-rule="evenodd" d="
+    M105 286
+    V210
+    C105 148 151 104 216 104
+    H309
+    C373 104 410 143 410 202
+    C410 261 369 300 308 300
+    H254
+    V366
+    H174
+    V286
+    H105
+    Z
+
+    M254 226
+    H307
+    C324 226 337 216 337 201
+    C337 186 326 176 307 176
+    H216
+    C197 176 185 188 185 207
+    V226
+    H254
+    Z"/>
+
+  <path fill="url(#orange)" d="
+    M104 300
+    C104 266 128 242 161 242
+    H203
+    V294
+    C203 322 188 344 162 359
+    L104 393
+    Z"/>
+</svg>

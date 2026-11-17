@@ -1,0 +1,966 @@
+<main class="courier-shell">
+  <div #mapCanvas class="courier-map" role="img" aria-label="Mapa da região de entregas"></div>
+  <div class="map-credit" aria-live="polite">
+    @if (gpsState() === 'searching') {
+      Buscando sinal GPS…
+    } @else if (gpsState() === 'low-accuracy') {
+      Localização imprecisa · {{ gpsAccuracy() }} m de margem
+    } @else if (gpsState() === 'denied') {
+      GPS bloqueado · revise a permissão do navegador
+    } @else if (gpsState() === 'unavailable') {
+      GPS indisponível neste dispositivo
+    } @else if (routeStatus() === 'loading') {
+      {{ gpsState() === 'active' ? 'Traçando da sua posição' : 'Calculando rota de exemplo' }}
+    } @else if (routeStatus() === 'ready') {
+      {{ gpsState() === 'active' ? 'Da sua posição' : 'Rota de demonstração' }} ·
+      {{ routeSummary() }}
+    } @else if (routeStatus() === 'unavailable') {
+      Traçado indisponível · abra o Waze no endereço
+    } @else if (activeJobs().length) {
+      Destino sem coordenadas · abra o Waze
+    } @else {
+      Rota exemplo · Salvador, BA
+    }
+  </div>
+  <header class="courier-topbar">
+    <div class="courier-identity">
+      <img
+        [src]="
+          theme.isDark()
+            ? '/assets/images/prattio-motoboy-imagens-v2/escuro/logo-horizontal-dark.svg'
+            : '/assets/images/prattio-motoboy-imagens-v2/claro/logo-horizontal.svg'
+        "
+        alt="Prattio Motoboy"
+        width="132"
+        height="40"
+        class="courier-logo"
+      />
+      <span class="identity-divider" aria-hidden="true"></span>
+      <span class="courier-profile-avatar">
+        @if (profilePhotoUrl()) {
+          <img [src]="profilePhotoUrl()" alt="" />
+        } @else {
+          <ng-icon name="lucideUserRound" size="17" />
+        }
+      </span>
+      <span class="min-w-0">
+        <span class="courier-eyebrow">PRATTIO ENTREGAS</span>
+        <strong class="courier-name">{{ profileName() }}</strong>
+      </span>
+    </div>
+    <div class="courier-top-actions">
+      <button
+        type="button"
+        role="switch"
+        [attr.aria-checked]="online()"
+        [disabled]="mode() === 'Loja' && !selectedCourier()?.active"
+        class="courier-connect"
+        [class.is-online]="online()"
+        (click)="setOnline(!online())"
+      >
+        <span class="connection-dot" [class.is-online]="online()"></span>
+        <span class="connect-label">{{ online() ? 'Conectado' : 'Conectar' }}</span>
+      </button>
+      <button
+        type="button"
+        class="courier-settings-trigger"
+        aria-label="Abrir configurações"
+        [disabled]="activeDirectOffer() !== null || offerActionPending() !== null"
+        [attr.aria-expanded]="settingsOpen()"
+        (click)="toggleSettings()"
+      >
+        <ng-icon name="lucideSettings" size="19" />
+      </button>
+    </div>
+  </header>
+
+  @if (settingsOpen()) {
+    <div
+      class="settings-backdrop"
+      role="presentation"
+      (click)="closeSettings()"
+      (keydown.escape)="closeSettings()"
+      tabindex="-1"
+    >
+      <section
+        class="settings-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="courier-settings-title"
+        (click)="$event.stopPropagation()"
+      >
+        <header class="settings-dialog-header">
+          <div>
+            <span class="settings-kicker">PRATTIO ENTREGAS</span>
+            <h2 id="courier-settings-title">Configurações</h2>
+          </div>
+          <button
+            type="button"
+            class="settings-close"
+            aria-label="Fechar configurações"
+            (click)="closeSettings()"
+          >
+            <ng-icon name="lucideX" size="19" />
+          </button>
+        </header>
+
+        <div class="settings-dialog-content">
+          <section class="settings-profile" aria-label="Perfil do entregador">
+            <label class="profile-photo-picker" title="Alterar foto de perfil">
+              @if (profilePhotoUrl()) {
+                <img [src]="profilePhotoUrl()" alt="Foto de perfil do entregador" />
+              } @else {
+                <ng-icon name="lucideUserRound" size="27" />
+              }
+              <span><ng-icon name="lucideCamera" size="13" /></span>
+              <input
+                type="file"
+                accept="image/*"
+                aria-label="Escolher foto de perfil"
+                (change)="onProfilePhotoSelected($event)"
+              />
+            </label>
+            <label class="profile-name-field">
+              <span>Nome do entregador</span>
+              <input
+                type="text"
+                maxlength="60"
+                [value]="profileName()"
+                (input)="saveProfileName($any($event.target).value)"
+              />
+            </label>
+            <span class="profile-account-id"
+              >{{ mode() === 'Loja' ? 'Equipe própria' : 'Parceiro avulso' }} ·
+              {{ mode() === 'Loja' ? courierId() : partnerId() }}</span
+            >
+          </section>
+          <section class="settings-operation-mode" aria-label="Modalidade de entrega">
+            <div class="settings-section-heading">
+              <div>
+                <h3>Modalidade</h3>
+                <span>Escolha como vai receber entregas</span>
+              </div>
+            </div>
+            <div
+              class="mode-switch settings-mode-switch"
+              role="group"
+              aria-label="Modalidade de entrega"
+            >
+              <button
+                type="button"
+                [class.selected]="mode() === 'Parceiro'"
+                [disabled]="offerActionPending() !== null || !!activeDirectOffer()"
+                (click)="setMode('Parceiro')"
+              >
+                Avulso
+              </button>
+              <button
+                type="button"
+                [class.selected]="mode() === 'Loja'"
+                [disabled]="offerActionPending() !== null || !!activeDirectOffer()"
+                (click)="setMode('Loja')"
+              >
+                Da loja
+              </button>
+            </div>
+            @if (mode() === 'Loja') {
+              <div class="registered-store-info">
+                <ng-icon name="lucideStore" size="17" />
+                <span>
+                  <strong>{{ selectedCourier()?.storeName || 'Loja não vinculada' }}</strong>
+                  <small>{{ selectedCourier()?.storeAddress || 'Endereço não cadastrado' }}</small>
+                </span>
+              </div>
+            }
+          </section>
+
+          <section class="settings-metrics" aria-label="Métricas da conta">
+            <div class="settings-section-heading">
+              <div>
+                <h3>Seu desempenho</h3>
+                <span>Dados desta demonstração</span>
+              </div>
+              <ng-icon name="lucideTrendingUp" size="18" />
+            </div>
+            <div class="metric-grid">
+              <article class="courier-metric">
+                <span>Taxa de aceite</span>
+                <strong>{{ acceptanceRate() === null ? '—' : acceptanceRate() + '%' }}</strong>
+                <small>{{ decidedOffers().length }} ofertas decididas</small>
+              </article>
+              <article class="courier-metric">
+                <span>Finalização</span>
+                <strong>{{ completionRate() === null ? '—' : completionRate() + '%' }}</strong>
+                <small>{{ completedCount() }} entregas concluídas</small>
+              </article>
+              <article class="courier-metric">
+                <span>Ganhos registrados</span>
+                <strong>{{ formatCurrency(earnedAmount()) }}</strong>
+                <small>{{ activeJobs().length }} em andamento</small>
+              </article>
+            </div>
+          </section>
+
+          <section class="settings-preferences" aria-label="Preferências do aplicativo">
+            <div class="settings-section-heading">
+              <div>
+                <h3>Preferências</h3>
+                <span>Controles deste dispositivo</span>
+              </div>
+            </div>
+            <div class="settings-preference-row">
+              <span><ng-icon name="lucideSun" size="17" /> Aparência</span>
+              <app-theme-toggle />
+            </div>
+            <button type="button" class="settings-preference-row" (click)="toggleLiveLocation()">
+              <span><ng-icon name="lucideMapPin" size="17" /> Localização ao vivo</span>
+              <strong>{{
+                gpsState() === 'active'
+                  ? 'Ativa'
+                  : gpsState() === 'low-accuracy'
+                    ? 'Imprecisa'
+                    : 'Desativada'
+              }}</strong>
+            </button>
+            <label class="settings-preference-row">
+              <span><ng-icon name="lucideBell" size="17" /> Som de ofertas</span>
+              <input
+                type="checkbox"
+                [checked]="alerts.soundEnabled()"
+                (change)="setSoundEnabled($any($event.target).checked)"
+              />
+            </label>
+            <label class="settings-preference-row">
+              <span><ng-icon name="lucideBell" size="17" /> Voz natural</span>
+              <input
+                type="checkbox"
+                [checked]="alerts.voiceEnabled()"
+                [disabled]="!alerts.naturalVoiceName()"
+                (change)="setVoiceEnabled($any($event.target).checked)"
+              />
+            </label>
+            <div class="settings-preference-row">
+              <span><ng-icon name="lucidePhone" size="17" /> Notificações</span>
+              <button type="button" class="settings-inline-action" (click)="enableNotifications()">
+                {{ alerts.notificationPermission() === 'granted' ? 'Ativas' : 'Ativar' }}
+              </button>
+            </div>
+            @if (!alerts.audioReady()) {
+              <button type="button" class="settings-audio-unlock" (click)="enableAlerts()">
+                <ng-icon name="lucideBell" size="16" /> Ativar áudio neste dispositivo
+              </button>
+            }
+            @if (alerts.naturalVoiceName()) {
+              <small class="settings-device-note"
+                >Voz disponível: {{ alerts.naturalVoiceName() }}</small
+              >
+            }
+          </section>
+
+          @if (online()) {
+            <button type="button" class="settings-demo-action" (click)="simulateIncomingOrder()">
+              <ng-icon name="lucidePlus" size="17" /> Gerar pedido de demonstração
+            </button>
+          }
+          <p class="settings-local-note">
+            Perfil e métricas são armazenados apenas neste dispositivo.
+          </p>
+          <button type="button" class="settings-support-action" (click)="openSupport()">
+            <ng-icon name="lucideInfo" size="18" />
+            <span
+              ><strong>Falar com alguém da Prattio</strong
+              ><small>Central de ajuda e suporte</small></span
+            >
+            <ng-icon name="lucideChevronRight" size="16" />
+          </button>
+        </div>
+      </section>
+    </div>
+  }
+
+  @if (supportOpen()) {
+    <div
+      class="settings-backdrop support-backdrop"
+      role="presentation"
+      (click)="closeSupport()"
+      (keydown.escape)="closeSupport()"
+      tabindex="-1"
+    >
+      <section
+        class="settings-dialog support-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="support-dialog-title"
+        (click)="$event.stopPropagation()"
+      >
+        <header class="settings-dialog-header">
+          <div>
+            <span class="settings-kicker">ATENDIMENTO</span>
+            <h2 id="support-dialog-title">Falar com a Prattio</h2>
+          </div>
+          <button
+            type="button"
+            class="settings-close"
+            aria-label="Fechar suporte"
+            (click)="closeSupport()"
+          >
+            <ng-icon name="lucideX" size="19" />
+          </button>
+        </header>
+        <div class="support-dialog-content">
+          <p class="support-demo-note">
+            Prévia local: o canal de atendimento ainda não está conectado.
+          </p>
+          <div class="support-thread" aria-live="polite">
+            @for (message of supportMessages(); track message.id) {
+              <article class="chat-message is-local-message">
+                <p>{{ message.text }}</p>
+                <small>Rascunho local · {{ timeLabel(message.createdAt) }}</small>
+              </article>
+            } @empty {
+              <p class="support-empty">
+                Conte à equipe o que aconteceu. A mensagem ficará apenas neste dispositivo até a
+                integração do suporte.
+              </p>
+            }
+          </div>
+          <label class="support-compose">
+            <span>Mensagem</span>
+            <textarea
+              rows="3"
+              maxlength="500"
+              [value]="supportDraft()"
+              (input)="supportDraft.set($any($event.target).value)"
+              placeholder="Descreva como podemos ajudar"
+            ></textarea>
+          </label>
+          <button
+            type="button"
+            class="settings-demo-action"
+            [disabled]="!supportDraft().trim()"
+            (click)="sendSupportMessage()"
+          >
+            Registrar mensagem de demonstração
+          </button>
+        </div>
+      </section>
+    </div>
+  }
+
+  <section class="earnings-float" aria-label="Ganhos registrados">
+    <ng-icon name="lucideWallet" size="18" />
+    <div>
+      <span>GANHOS REGISTRADOS</span>
+      <strong>{{ formatCurrency(earnedAmount()) }}</strong>
+    </div>
+    <p>{{ completedCount() }} {{ completedCount() === 1 ? 'entrega' : 'entregas' }}</p>
+  </section>
+
+  @if (mode() === 'Parceiro' && online() && activeDirectOffer(); as offer) {
+    <section
+      class="incoming-offer-overlay"
+      aria-live="assertive"
+      aria-label="Nova oferta direcionada"
+    >
+      <div class="incoming-offer-head">
+        <span>{{
+          activeDirectOfferBundle().length > 1
+            ? 'ROTA DUPLA · 2 PEDIDOS'
+            : 'NOVA ENTREGA · ' + offer.orderId
+        }}</span>
+        <span class="offer-countdown" [class.is-urgent]="offerSecondsRemaining() <= 2">
+          {{ offerSecondsRemaining() }}s
+        </span>
+        <button
+          type="button"
+          aria-label="Recusar oferta"
+          [disabled]="offerActionPending() !== null"
+          (click)="declineOfferBundle(activeDirectOfferBundle().map(item => item.orderId))"
+        >
+          ×
+        </button>
+      </div>
+      <div
+        class="offer-countdown-track"
+        role="progressbar"
+        aria-label="Tempo para responder"
+        [attr.aria-valuenow]="offerSecondsRemaining()"
+        aria-valuemin="0"
+        aria-valuemax="5"
+      >
+        <span [style.width.%]="offerProgressPercent()"></span>
+      </div>
+      <div class="offer-leg-list">
+        @for (leg of activeDirectOfferBundle(); track leg.orderId; let index = $index) {
+          <section class="offer-leg">
+            <div class="offer-leg-title">
+              <span>{{
+                activeDirectOfferBundle().length > 1 ? 'LOJA ' + (index + 1) : 'COLETA'
+              }}</span>
+              <strong>{{ leg.storeName }}</strong>
+              <b>{{ formatCurrency(leg.deliveryFee) }}</b>
+            </div>
+            <p class="offer-leg-address">
+              <ng-icon name="lucideStore" size="14" />
+              {{ leg.storeAddress || 'Endereço da loja indisponível' }}
+            </p>
+            <p class="offer-leg-address">
+              <ng-icon name="lucideMapPin" size="14" /> {{ leg.customer }} · {{ leg.address }}
+            </p>
+            <small>{{ leg.items }}</small>
+          </section>
+        }
+      </div>
+      <div class="incoming-offer-actions">
+        <button
+          type="button"
+          class="offer-decline"
+          [disabled]="offerActionPending() !== null"
+          (click)="declineOfferBundle(activeDirectOfferBundle().map(item => item.orderId))"
+        >
+          {{ isOfferProcessing(offer.orderId) ? 'Recusando…' : 'Recusar' }}
+        </button>
+        <button
+          type="button"
+          class="offer-accept"
+          [disabled]="offerActionPending() !== null"
+          (click)="acceptOfferBundle(activeDirectOfferBundle())"
+        >
+          {{ isOfferProcessing(offer.orderId) ? 'Aceitando…' : 'Aceitar entrega' }}
+        </button>
+      </div>
+      @if (queuedOfferCount()) {
+        <small class="queued-offers-note">+{{ queuedOfferCount() }} oferta(s) aguardando</small>
+      }
+    </section>
+  }
+
+  @if (mode() === 'Loja' && online()) {
+    <button
+      class="courier-checkin-float"
+      type="button"
+      (click)="courierAtStore() ? checkOutFromStore() : checkInAtStore()"
+    >
+      <ng-icon name="lucideStore" size="17" />
+      <span>
+        <strong>{{ selectedCourier()?.storeName || 'Loja vinculada' }}</strong>
+        <small>{{
+          courierAtStore()
+            ? 'Ponto registrado · ' + atStoreMinutes() + ' min'
+            : 'Bater ponto · cheguei à loja'
+        }}</small>
+      </span>
+    </button>
+  }
+
+  <section
+    class="courier-sheet"
+    [class.is-collapsed]="!sheetExpanded()"
+    [class.has-direct-offer]="mode() === 'Parceiro' && online() && !!activeDirectOffer()"
+    aria-label="Painel de trabalho do motoboy"
+  >
+    <button
+      class="sheet-handle"
+      type="button"
+      [attr.aria-expanded]="sheetExpanded()"
+      [attr.aria-label]="sheetExpanded() ? 'Recolher painel' : 'Expandir painel'"
+      (click)="toggleSheet()"
+    >
+      <span></span>
+    </button>
+    <div class="sheet-heading">
+      <div>
+        <h1>
+          {{
+            activeView() === 'route'
+              ? 'Sua rota'
+              : activeView() === 'offers'
+                ? 'Ofertas'
+                : 'Seus ganhos'
+          }}
+        </h1>
+        <p>
+          {{
+            activeView() === 'route'
+              ? activeJobs().length
+                ? routeItemCount() + ' itens em ' + activeJobs().length + ' pedidos'
+                : 'Prévia de rota · sem entregas ativas'
+              : activeView() === 'offers'
+                ? 'Chamadas disponíveis para você'
+                : 'Entregas concluídas nesta sessão'
+          }}
+        </p>
+      </div>
+      <div class="mode-switch" role="group" aria-label="Modalidade de entrega">
+        <button
+          type="button"
+          [class.selected]="mode() === 'Parceiro'"
+          [disabled]="offerActionPending() !== null || !!activeDirectOffer()"
+          (click)="setMode('Parceiro')"
+        >
+          Avulso
+        </button>
+        <button
+          type="button"
+          [class.selected]="mode() === 'Loja'"
+          [disabled]="offerActionPending() !== null || !!activeDirectOffer()"
+          (click)="setMode('Loja')"
+        >
+          Da loja
+        </button>
+      </div>
+    </div>
+
+    @if (mode() === 'Loja' && selectedCourier()) {
+      <p class="account-caption">
+        {{ selectedCourier()?.name }} · {{ selectedCourier()?.storeName || 'Loja não vinculada' }}
+      </p>
+    } @else if (mode() === 'Parceiro') {
+      <p class="account-caption">Avulso · ID {{ partnerId() }}</p>
+    }
+
+    @if (!sheetExpanded()) {
+      <div class="route-preview-card">
+        <div class="route-preview-copy">
+          <div class="route-preview-overline">
+            <span>{{ activeJobs().length ? 'PRÓXIMA PARADA' : 'PRÉVIA DE ROTA · SALVADOR' }}</span>
+            @if (mode() === 'Parceiro' && availableOffers().length) {
+              <b>{{ availableOffers().length }} ofertas</b>
+            }
+          </div>
+          <strong>{{ nextRouteStop().label }}</strong>
+          <small>{{ nextRouteStop().address }}</small>
+        </div>
+        <div class="route-preview-stats" aria-label="Tempo e distância estimados">
+          <strong>{{ routeEtaMinutes() ?? '—' }}<small>min</small></strong>
+          <span>{{ routeDistanceLabel() ?? 'ETA' }}</span>
+        </div>
+      </div>
+    }
+
+    @if (mode() === 'Loja' && online()) {
+      <div
+        class="courier-checkin-panel mb-3 flex items-center justify-between gap-3 rounded-lg border border-line bg-field px-3 py-2"
+      >
+        <span class="text-xs font-semibold text-ink courier-checkin-panel">
+          {{ selectedCourier()?.storeName }} ·
+          {{
+            courierAtStore() ? 'Ponto registrado há ' + atStoreMinutes() + ' min' : 'Cheguei à loja'
+          }}
+        </span>
+        @if (courierAtStore()) {
+          <button type="button" class="text-xs font-bold text-muted" (click)="checkOutFromStore()">
+            Saí da loja
+          </button>
+        } @else {
+          <button
+            type="button"
+            class="h-8 rounded-md bg-brand px-3 text-xs font-bold text-white"
+            (click)="checkInAtStore()"
+          >
+            Bater ponto na loja
+          </button>
+        }
+      </div>
+    }
+
+    <nav class="courier-tabs" aria-label="Seções do app">
+      <button
+        type="button"
+        [class.active]="activeView() === 'route'"
+        [disabled]="offerActionPending() !== null || !!activeDirectOffer()"
+        (click)="navigateToView('route')"
+      >
+        <ng-icon name="lucideMapPin" size="17" /> <span>Rota</span>
+      </button>
+      <button
+        type="button"
+        [class.active]="activeView() === 'offers'"
+        [disabled]="offerActionPending() !== null || !!activeDirectOffer()"
+        (click)="navigateToView('offers')"
+      >
+        <ng-icon name="lucideShoppingBag" size="17" /> <span>Radar</span>
+        @if (radarQueueCount()) {
+          <b>{{ radarQueueCount() }}</b>
+        }
+      </button>
+      <button
+        type="button"
+        [class.active]="activeView() === 'earnings'"
+        [disabled]="offerActionPending() !== null || !!activeDirectOffer()"
+        (click)="navigateToView('earnings')"
+      >
+        <ng-icon name="lucideWallet" size="17" /> <span>Ganhos</span>
+      </button>
+    </nav>
+
+    <div class="sheet-content">
+      @if (activeView() === 'route') {
+        @if (routeStops().length) {
+          <ol class="route-stop-list" aria-label="Ordem de coleta e entrega calculada">
+            @for (stop of routeStops(); track $index) {
+              <li [class.is-pickup-stop]="stop.kind === 'pickup'">
+                <span class="route-stop-number">{{ $index + 1 }}</span>
+                <span class="route-stop-copy">
+                  <strong>{{ stop.label }}</strong>
+                  <small>{{ stop.address }}</small>
+                </span>
+              </li>
+            }
+          </ol>
+        }
+        @if (activeJobs().length) {
+          @for (job of activeJobs(); track job.orderId) {
+            <article class="delivery-task">
+              <div class="task-topline">
+                <span class="route-label">{{ job.routeId }}</span>
+                <span class="task-status">{{ job.status }}</span>
+              </div>
+              <div class="task-title-row">
+                <div>
+                  <h2>Pedido #{{ job.orderId }}</h2>
+                  <p>{{ job.items }}</p>
+                </div>
+                <span class="task-count">{{ job.itemCount }}<small>itens</small></span>
+              </div>
+              @if (job.status === 'A caminho da loja' && job.storeAddress) {
+                <a
+                  class="task-address"
+                  [href]="mapUrl(job.storeAddress, job.storeLatitude, job.storeLongitude)"
+                  target="_blank"
+                  rel="noopener"
+                >
+                  <ng-icon name="lucideStore" size="16" />
+                  <span>{{ job.storeName }} · {{ job.storeAddress }}</span>
+                  <strong>Coleta</strong>
+                </a>
+              }
+              <a
+                class="task-address"
+                [href]="mapUrl(job.address, job.destinationLatitude, job.destinationLongitude)"
+                target="_blank"
+                rel="noopener"
+              >
+                <ng-icon name="lucideMapPin" size="16" /> <span>{{ job.address }}</span>
+                <strong>Waze</strong>
+              </a>
+              <section class="order-contact-panel" aria-label="Contato deste pedido">
+                <div class="order-contact-toolbar">
+                  <div class="contact-recipient-switch" role="group" aria-label="Contato do pedido">
+                    <button
+                      type="button"
+                      [class.active]="contactRecipient() === 'Cliente'"
+                      (click)="setContactRecipient('Cliente')"
+                    >
+                      Cliente
+                    </button>
+                    @if (job.storeName) {
+                      <button
+                        type="button"
+                        [class.active]="contactRecipient() === 'Loja'"
+                        (click)="setContactRecipient('Loja')"
+                      >
+                        Loja
+                      </button>
+                    }
+                  </div>
+                  <button
+                    type="button"
+                    class="order-contact-action"
+                    [class.active]="activeChatOrderId() === job.orderId"
+                    (click)="toggleOrderChat(job.orderId)"
+                  >
+                    <ng-icon name="lucideMail" size="16" /> Chat
+                  </button>
+                  @if (privateCallHref(job); as callHref) {
+                    <a class="order-contact-action" [href]="callHref">
+                      <ng-icon name="lucidePhone" size="16" /> Ligar
+                    </a>
+                  } @else {
+                    <button
+                      type="button"
+                      class="order-contact-action is-unavailable"
+                      disabled
+                      title="A ligação só será ativada quando o servidor fornecer um número de relay privado."
+                    >
+                      <ng-icon name="lucidePhone" size="16" /> Ligar
+                    </button>
+                  }
+                </div>
+                @if (activeChatOrderId() === job.orderId) {
+                  <div class="order-chat-panel">
+                    <div class="order-chat-heading">
+                      <div>
+                        <strong>{{
+                          contactRecipient() === 'Cliente' ? job.customer : job.storeName
+                        }}</strong>
+                        <small>Pedido #{{ job.orderId }}</small>
+                      </div>
+                      <button
+                        type="button"
+                        aria-label="Fechar chat"
+                        (click)="toggleOrderChat(job.orderId)"
+                      >
+                        <ng-icon name="lucideX" size="16" />
+                      </button>
+                    </div>
+                    <div class="order-chat-thread" aria-live="polite">
+                      @for (message of activeChatMessages(); track message.id) {
+                        <article class="chat-message is-local-message">
+                          <p>{{ message.text }}</p>
+                          <small>Não enviada · {{ timeLabel(message.createdAt) }}</small>
+                        </article>
+                      } @empty {
+                        <p class="chat-empty">A conversa deste pedido será exibida aqui.</p>
+                      }
+                    </div>
+                    <p class="chat-privacy-note">
+                      Prévia local: mensagens não são enviadas ao cliente ou à loja.
+                    </p>
+                    <div class="order-chat-compose">
+                      <input
+                        type="text"
+                        maxlength="300"
+                        [value]="chatDraft()"
+                        (input)="chatDraft.set($any($event.target).value)"
+                        (keydown.enter)="sendOrderChat(job.orderId)"
+                        placeholder="Escreva uma mensagem"
+                      />
+                      <button
+                        type="button"
+                        [disabled]="!chatDraft().trim()"
+                        (click)="sendOrderChat(job.orderId)"
+                      >
+                        Enviar
+                      </button>
+                    </div>
+                  </div>
+                }
+              </section>
+              <div class="task-times">
+                <span
+                  >Chegada <b>{{ timeLabel(job.arrivedAt) }}</b></span
+                >
+                <span
+                  >Espera
+                  <b>{{
+                    elapsedSince(job.arrivedAt) === null
+                      ? '—'
+                      : elapsedSince(job.arrivedAt) + ' min'
+                  }}</b></span
+                >
+              </div>
+              @if (routeJobs(job).length > 1) {
+                <p class="grouped-stops">
+                  Na mesma rota: #{{ routeJobs(job).map(routeJob => routeJob.orderId).join(', #') }}
+                </p>
+              }
+              <div class="task-actions">
+                @if (job.status === 'Em entrega' && job.deliveryCode) {
+                  <label class="min-w-0 flex-1">
+                    <span class="mb-1 block text-[10px] font-bold text-muted"
+                      >Código informado pelo cliente</span
+                    >
+                    <input
+                      type="text"
+                      inputmode="numeric"
+                      autocomplete="one-time-code"
+                      maxlength="4"
+                      [value]="deliveryCodeInputs()[job.orderId] || ''"
+                      (input)="setDeliveryCode(job.orderId, $any($event.target).value)"
+                      placeholder="4 dígitos"
+                      class="h-10 w-full rounded-md border border-line bg-field px-3 font-mono text-lg font-bold tracking-[0.3em] text-ink"
+                    />
+                    @if (deliveryCodeErrors()[job.orderId]) {
+                      <span class="mt-1 block text-[10px] font-semibold text-red-600">{{
+                        deliveryCodeErrors()[job.orderId]
+                      }}</span>
+                    }
+                  </label>
+                }
+                <button
+                  type="button"
+                  class="primary-action"
+                  [disabled]="
+                    jobActionPending() !== null ||
+                    (job.status === 'Em entrega' &&
+                      !!job.deliveryCode &&
+                      (deliveryCodeInputs()[job.orderId] || '').length !== 4)
+                  "
+                  (click)="advanceJob(job)"
+                >
+                  {{ jobActionPending() === job.orderId ? 'Processando…' : actionLabel(job) }}
+                </button>
+                <label
+                  class="photo-action"
+                  [attr.aria-label]="
+                    job.proofImage ? 'Atualizar comprovante' : 'Adicionar foto do comprovante'
+                  "
+                >
+                  <ng-icon name="lucideCamera" size="18" />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    class="sr-only"
+                    (change)="onProofSelected(job, $event)"
+                  />
+                </label>
+              </div>
+              @if (job.proofImage) {
+                <img [src]="job.proofImage" alt="Comprovante da entrega" class="proof-image" />
+              }
+            </article>
+          }
+        } @else {
+          <div class="empty-route">
+            @if (online()) {
+              <span class="example-tag">DISPONÍVEL</span>
+              <h2 class="mt-2">Aguardando uma chamada</h2>
+              <p>Novas entregas aparecerão aqui.</p>
+            } @else {
+              <span class="example-tag">OFFLINE</span>
+              <h2 class="mt-2">Sua rota está livre</h2>
+              <p>Conecte-se para voltar a receber entregas.</p>
+            }
+          </div>
+        }
+      }
+
+      @if (activeView() === 'offers') {
+        @if (mode() === 'Parceiro' && !online()) {
+          <div class="empty-route">
+            <h2>Você está offline</h2>
+            <p>Conecte-se para receber ofertas de entrega.</p>
+          </div>
+        } @else if (mode() === 'Parceiro' && activeDirectOffer()) {
+          <div class="empty-route offer-queue-hint">
+            <h2>Oferta direcionada em destaque</h2>
+            <p>Responda ao pedido exibido no mapa para seguir para as próximas chamadas.</p>
+          </div>
+        } @else if (mode() === 'Parceiro' && activeRadarOfferBundle().length) {
+          @let radarBundle = activeRadarOfferBundle();
+          <article class="delivery-task">
+            <div class="task-topline radar-offer-heading">
+              <span class="route-label">{{
+                radarBundle.length > 1 ? 'Rota dupla · 2 lojas' : radarBundle[0].storeName
+              }}</span
+              ><strong
+                >{{ formatCurrency(radarBundle.reduce((total, offer) => total + offer.deliveryFee, 0)) }}</strong
+              >
+            </div>
+            <div class="radar-live-status" aria-live="polite">
+              <span class="radar-live-dot" aria-hidden="true"></span>
+              <div>
+                <strong>Disponível no Radar</strong>
+                <small>Sem prazo · até algum entregador aceitar</small>
+              </div>
+            </div>
+            <div class="offer-leg-list radar-leg-list">
+              @for (leg of radarBundle; track leg.orderId; let index = $index) {
+                <section class="offer-leg">
+                  <div class="offer-leg-title">
+                    <span>{{
+                      radarBundle.length > 1 ? 'LOJA ' + (index + 1) : 'PEDIDO #' + leg.orderId
+                    }}</span>
+                    <strong>{{ leg.storeName }}</strong>
+                  </div>
+                  <p class="offer-leg-address">
+                    <ng-icon name="lucideStore" size="14" />
+                    {{ leg.storeAddress || 'Endereço da loja indisponível' }}
+                  </p>
+                  <p class="offer-leg-address">
+                    <ng-icon name="lucideMapPin" size="14" /> {{ leg.customer }} · {{ leg.address }}
+                  </p>
+                  <small>{{ leg.items }}</small>
+                  <a
+                    class="task-address"
+                    [href]="
+                      mapUrl(
+                        leg.storeAddress || leg.storeName,
+                        leg.storeLatitude,
+                        leg.storeLongitude
+                      )
+                    "
+                    target="_blank"
+                    rel="noopener"
+                  >
+                    <ng-icon name="lucideArrowRight" size="15" /><span>Navegar para a loja</span
+                    ><strong>Waze</strong>
+                  </a>
+                </section>
+              }
+            </div>
+            <button
+              type="button"
+              class="primary-action full-action"
+              [disabled]="offerActionPending() !== null"
+              (click)="acceptOfferBundle(radarBundle)"
+            >
+              {{
+                isOfferProcessing(radarBundle[0].orderId)
+                  ? 'Aceitando…'
+                  : radarBundle.length > 1
+                    ? 'Aceitar rota dupla'
+                    : 'Aceitar oferta'
+              }}
+            </button>
+            <button
+              type="button"
+              class="offer-radar-decline"
+              [disabled]="offerActionPending() !== null"
+              (click)="declineOfferBundle(radarBundle.map(offer => offer.orderId))"
+            >
+              {{ isOfferProcessing(radarBundle[0].orderId) ? 'Recusando…' : 'Recusar chamada' }}
+            </button>
+            @if (queuedOfferCount()) {
+              <small class="queued-offers-note">+{{ queuedOfferCount() }} oferta(s) na fila</small>
+            }
+          </article>
+        } @else {
+          <div class="empty-route">
+            <span class="example-tag">EXEMPLO</span>
+            <h2 class="mt-2">Nenhuma oferta ativa</h2>
+            <p>Ofertas reais aparecerão aqui quando forem encaminhadas à sua conta.</p>
+          </div>
+          @if (mode() === 'Parceiro') {
+            @for (offer of sampleOffers; track offer.orderId) {
+              <article class="delivery-task sample-task">
+                <div class="task-topline">
+                  <span class="route-label">{{ offer.storeName }}</span
+                  ><span class="example-tag">DEMO</span>
+                </div>
+                <h2>Pedido #{{ offer.orderId }}</h2>
+                <p>{{ offer.items }} · {{ offer.address }}</p>
+                <strong>{{ formatCurrency(offer.deliveryFee) }}</strong
+                ><button type="button" class="sample-action" disabled>
+                  Exemplo · ação desativada
+                </button>
+              </article>
+            }
+          }
+        }
+      }
+
+      @if (activeView() === 'earnings') {
+        <section class="earnings-summary">
+          <span>GANHOS REGISTRADOS</span><strong>{{ formatCurrency(earnedAmount()) }}</strong>
+          <p>{{ completedCount() }} entregas concluídas</p>
+          @if (mode() === 'Loja') {
+            <small>{{ payRateLabel() }}</small>
+          }
+        </section>
+        @for (job of completedJobs(); track job.orderId) {
+          <article class="completed-task">
+            <span>Pedido #{{ job.orderId }} · {{ job.routeId }}</span
+            ><strong>{{ timeLabel(job.completedAt) }}</strong>
+          </article>
+        } @empty {
+          <div class="empty-route">
+            <h2>Nenhuma entrega concluída</h2>
+            <p>Os ganhos serão atualizados quando uma entrega real for finalizada.</p>
+          </div>
+        }
+      }
+    </div>
+  </section>
+</main>

@@ -1,0 +1,268 @@
+<section class="flex w-full max-w-sm flex-col items-center">
+  <div class="flex w-full max-w-md flex-col items-center text-center">
+    <div class="mb-4 flex size-14 items-center justify-center rounded-2xl bg-brand/10 text-brand">
+      <ng-icon name="lucideBike" size="28" />
+    </div>
+
+    <h1 class="text-2xl font-bold tracking-tight text-ink sm:text-3xl">Cadastro de entregador</h1>
+
+    <span class="mt-2 text-sm font-medium text-muted sm:text-base">
+      Preencha seus dados para começar a realizar entregas.
+    </span>
+
+    <div class="mt-6 h-1 w-12 rounded-full bg-brand"></div>
+  </div>
+
+  <!-- Form -->
+  <form class="mt-8 flex w-full max-w-md flex-col gap-5" novalidate (submit)="onSubmit($event)">
+    <!-- Name -->
+    <div class="flex flex-col gap-2">
+      <label for="name" class="text-sm font-semibold text-ink/80"> Nome completo </label>
+
+      <div class="relative">
+        <ng-icon
+          name="lucideUserRound"
+          size="19"
+          class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted"
+        />
+
+        <input
+          id="name"
+          type="text"
+          [formField]="motoboyForm.name"
+          autocomplete="name"
+          placeholder="Digite seu nome completo"
+          class="form-input"
+        />
+      </div>
+
+      @if (motoboyForm.name().touched()) {
+        @for (error of motoboyForm.name().errors(); track $index) {
+          <span class="field-error">{{ error.message }}</span>
+        }
+      }
+    </div>
+
+    <!-- Email -->
+    <div class="flex flex-col gap-2">
+      <label for="email" class="text-sm font-semibold text-ink/80"> E-mail </label>
+
+      <div class="relative">
+        <ng-icon
+          name="lucideMail"
+          size="19"
+          class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted"
+        />
+
+        <input
+          id="email"
+          type="email"
+          [formField]="motoboyForm.email"
+          autocomplete="email"
+          placeholder="seu@email.com"
+          class="form-input"
+        />
+      </div>
+
+      @if (motoboyForm.email().touched()) {
+        @for (error of motoboyForm.email().errors(); track $index) {
+          <span class="field-error">{{ error.message }}</span>
+        }
+      }
+    </div>
+
+    <!-- CPF -->
+    <div class="flex flex-col gap-2">
+      <label for="cpf" class="text-sm font-semibold text-ink/80"> CPF </label>
+
+      <div class="relative">
+        <ng-icon
+          name="lucideFileText"
+          size="19"
+          class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted"
+        />
+
+        <input
+          id="cpf"
+          type="text"
+          [formField]="motoboyForm.cpf"
+          mask="000.000.000-00"
+          autocomplete="off"
+          placeholder="000.000.000-00"
+          class="form-input"
+        />
+      </div>
+
+      @if (motoboyForm.cpf().touched()) {
+        @for (error of motoboyForm.cpf().errors(); track $index) {
+          <span class="field-error">{{ error.message }}</span>
+        }
+      }
+    </div>
+
+    <!-- Phone -->
+    <div class="flex flex-col gap-2">
+      <label for="phone" class="text-sm font-semibold text-ink/80"> Telefone / WhatsApp </label>
+
+      <div class="relative">
+        <ng-icon
+          name="lucidePhone"
+          size="19"
+          class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted"
+        />
+
+        <input
+          id="phone"
+          type="tel"
+          [formField]="motoboyForm.phone"
+          mask="(00) 00000-0000"
+          autocomplete="tel"
+          placeholder="(00) 00000-0000"
+          class="form-input"
+        />
+      </div>
+
+      @if (motoboyForm.phone().touched()) {
+        @for (error of motoboyForm.phone().errors(); track $index) {
+          <span class="field-error">{{ error.message }}</span>
+        }
+      }
+    </div>
+
+    <!-- Password -->
+    <div class="flex flex-col gap-2">
+      <label for="password" class="text-sm font-semibold text-ink/80"> Senha </label>
+
+      <div class="relative">
+        <ng-icon
+          name="lucideLockKeyhole"
+          size="19"
+          class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted"
+        />
+
+        <input
+          id="password"
+          [type]="showPassword() ? 'text' : 'password'"
+          [formField]="motoboyForm.password"
+          autocomplete="new-password"
+          placeholder="Crie uma senha"
+          class="form-input pr-12"
+        />
+
+        <button
+          type="button"
+          (click)="showPassword.update(value => !value)"
+          [attr.aria-label]="showPassword() ? 'Ocultar senha' : 'Mostrar senha'"
+          class="absolute right-4 top-1/2 -translate-y-1/2 text-muted transition-colors hover:text-brand-2"
+        >
+          <ng-icon [name]="showPassword() ? 'lucideEyeOff' : 'lucideEye'" size="19" />
+        </button>
+      </div>
+
+      @if (motoboyForm.password().touched()) {
+        @for (error of motoboyForm.password().errors(); track $index) {
+          <span class="field-error">{{ error.message }}</span>
+        }
+      }
+    </div>
+
+    <!-- Confirm Password -->
+    <div class="flex flex-col gap-2">
+      <label for="confirmPassword" class="text-sm font-semibold text-ink/80">
+        Confirmar senha
+      </label>
+
+      <div class="relative">
+        <ng-icon
+          name="lucideLockKeyhole"
+          size="19"
+          class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted"
+        />
+
+        <input
+          id="confirmPassword"
+          [type]="showConfirmPassword() ? 'text' : 'password'"
+          [formField]="motoboyForm.confirmPassword"
+          autocomplete="new-password"
+          placeholder="Digite sua senha novamente"
+          class="form-input pr-12"
+        />
+
+        <button
+          type="button"
+          (click)="showConfirmPassword.update(value => !value)"
+          [attr.aria-label]="showConfirmPassword() ? 'Ocultar senha' : 'Mostrar senha'"
+          class="absolute right-4 top-1/2 -translate-y-1/2 text-muted transition-colors hover:text-brand-2"
+        >
+          <ng-icon [name]="showConfirmPassword() ? 'lucideEyeOff' : 'lucideEye'" size="19" />
+        </button>
+      </div>
+
+      @if (motoboyForm.confirmPassword().touched()) {
+        @for (error of motoboyForm.confirmPassword().errors(); track $index) {
+          <span class="field-error">{{ error.message }}</span>
+        }
+      }
+    </div>
+
+    <!-- Terms -->
+    <div class="flex flex-col gap-2">
+      <label class="flex cursor-pointer items-start gap-3">
+        <input
+          type="checkbox"
+          [formField]="motoboyForm.acceptedTerms"
+          class="mt-0.5 size-4 shrink-0 cursor-pointer accent-brand"
+        />
+
+        <span class="text-xs leading-relaxed text-muted">
+          Li e concordo com os
+          <a href="/terms" class="font-semibold text-brand hover:underline"> Termos de Uso </a>
+          e a
+          <a href="/privacy" class="font-semibold text-brand hover:underline">
+            Política de Privacidade
+          </a>
+          da Prattio.
+        </span>
+      </label>
+
+      @if (motoboyForm.acceptedTerms().touched()) {
+        @for (error of motoboyForm.acceptedTerms().errors(); track $index) {
+          <span class="field-error">{{ error.message }}</span>
+        }
+      }
+    </div>
+
+    @if (submissionReady()) {
+      <p role="status" class="rounded-lg border border-line bg-surface p-3 text-sm text-muted">
+        Dados validados. O envio do cadastro depende da integração com o serviço.
+      </p>
+    }
+
+    <button
+      type="submit"
+      [disabled]="motoboyForm().submitting()"
+      [attr.aria-busy]="motoboyForm().submitting()"
+      class="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-brand py-3.5 text-sm font-semibold text-white shadow-sm shadow-brand/20 transition-all hover:bg-brand/90 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-60"
+    >
+      @if (motoboyForm().submitting()) {
+        <ng-icon name="lucideLoaderCircle" size="18" class="motion-safe:animate-spin" aria-hidden="true" />
+        Processando...
+      } @else {
+        Criar minha conta
+        <ng-icon name="lucideArrowRight" size="18" />
+      }
+    </button>
+
+    <!-- Back -->
+    <p class="text-center text-sm text-muted">
+      Escolheu o perfil errado?
+
+      <a
+        routerLink="/auth/user-profile"
+        class="font-semibold text-brand transition-colors hover:text-brand-2 hover:underline"
+      >
+        Voltar
+      </a>
+    </p>
+  </form>
+</section>

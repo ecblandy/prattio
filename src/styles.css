@@ -1,22 +1,53 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
-
+@import 'leaflet/dist/leaflet.css';
 @import 'tailwindcss';
+@import './app/features/courier-app/courier-app.css';
+
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  /* Brand colors */
-  --color-brand: #b91c1c;
-  --color-brand-2: #ef4444;
+  /* Marca */
+  --color-brand: #3d0457; /* roxo */
+  --color-brand-2: #ff6b00; /* laranja, hover e destaque */
+  --color-ink: #0f0a14; /* preto, textos principais */
 
-  /* Background colors */
-  --color-primary: #f5f5f5;
-  --color-primary-2: #ffffff;
+  /* Superfícies */
+  --color-page: #f7f5f9; /* fundo da página */
+  --color-surface: #ffffff; /* cards e campos em foco */
+  --color-field: #faf9fb; /* fundo dos inputs */
 
-  /* Secondary colors */
-  --color-secondary: #4b4b4b;
-  --color-secondary-2: #d9d9d9;
-  --color-secondary-3: #e6e6e6;
+  /* Textos e bordas */
+  --color-muted: #6b6478;
+  --color-line: #e6e1ec;
 
   --font-sans: 'Poppins', sans-serif;
+}
+
+/* Modo escuro: sobrescreve os mesmos tokens */
+:root.dark {
+  --color-brand: #c2410c; /* laranja queimado para ações e foco */
+  --color-brand-2: #fdba74; /* laranja claro para texto e hover */
+  --color-ink: #f5f3f7;
+
+  --color-page: #0f0a14;
+  --color-surface: #1a1424;
+  --color-field: #14101c;
+
+  --color-muted: #a59cb3;
+  --color-line: #2e2640;
+}
+
+:root.dark .text-brand,
+:root.dark [class~='hover:text-brand']:hover {
+  color: var(--color-brand-2);
+}
+
+:root {
+  color-scheme: light;
+}
+
+:root.dark {
+  color-scheme: dark;
 }
 
 * {
@@ -26,6 +57,81 @@
 html,
 body {
   min-height: 100%;
-  background-color: var(--color-primary);
+  background-color: var(--color-page);
+  color: var(--color-ink);
   font-family: var(--font-sans);
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+body {
+  margin: 0;
+}
+
+select:not([multiple]):not([size]),
+select:not([multiple])[size='1'] {
+  appearance: none;
+  padding-right: 2.5rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b6478' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-position: right 1rem center;
+  background-repeat: no-repeat;
+  background-size: 14px 14px;
+  cursor: pointer;
+  text-overflow: ellipsis;
+}
+
+:root.dark select:not([multiple]):not([size]),
+:root.dark select:not([multiple])[size='1'] {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a59cb3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+
+select:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+select:disabled {
+  cursor: not-allowed;
+}
+
+select option {
+  color: var(--color-ink);
+  background-color: var(--color-surface);
+}
+
+@media (forced-colors: active) {
+  select:not([multiple]):not([size]),
+  select:not([multiple])[size='1'],
+  :root.dark select:not([multiple]):not([size]),
+  :root.dark select:not([multiple])[size='1'] {
+    appearance: auto;
+    background-image: none;
+  }
+}
+
+app-layout router-outlet + * {
+  display: block;
+  width: 100%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  app-layout router-outlet + * {
+    animation: auth-enter 480ms ease-out both;
+  }
+
+  app-layout button[type='submit']:not(:disabled):hover {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes auth-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
