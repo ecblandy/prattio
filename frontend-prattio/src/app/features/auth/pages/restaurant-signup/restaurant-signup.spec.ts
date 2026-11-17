@@ -68,6 +68,55 @@ describe('RestaurantSignup', () => {
     );
   });
 
+  it('accepts and formats landline and mobile phone numbers as they are typed', async () => {
+    fixture.detectChanges();
+    const input: HTMLInputElement = fixture.nativeElement.querySelector('#restaurant-phone');
+    expect(input.maxLength === -1 || input.maxLength >= 15).toBe(true);
+    input.focus();
+    const typeDigit = async (digit: string) => {
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: digit, code: `Numpad${digit}`, bubbles: true }));
+      input.setRangeText(digit, input.selectionStart!, input.selectionEnd!, 'end');
+      input.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: digit }));
+      await fixture.whenStable();
+    };
+
+    for (const digit of '1199999123') {
+      await typeDigit(digit);
+    }
+
+    expect(input.value).toBe('(11) 9999-9123');
+    expect(component.model().phone).toBe('1199999123');
+    expect(component.restaurantForm.phone().errors()).toEqual([]);
+
+    await typeDigit('4');
+
+    expect(input.value).toBe('(11) 99999-1234');
+    expect(component.model().phone).toBe('11999991234');
+    expect(component.restaurantForm.phone().errors()).toEqual([]);
+  });
+
+  it('accepts rapid numeric-keypad input', async () => {
+    fixture.detectChanges();
+    const input: HTMLInputElement = fixture.nativeElement.querySelector('#restaurant-phone');
+    input.focus();
+    for (const digit of '71912345678') {
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: digit, code: `Numpad${digit}`, bubbles: true }));
+      input.setRangeText(digit, input.selectionStart!, input.selectionEnd!, 'end');
+      input.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: digit }));
+    }
+    await fixture.whenStable();
+
+    expect(input.value).toBe('(71) 91234-5678');
+    expect(component.model().phone).toBe('71912345678');
+  });
+
+  it('rejects a phone number longer than 11 digits in the form model', () => {
+    component.model.update((model) => ({ ...model, phone: '119999912345' }));
+    expect(component.restaurantForm.phone().errors()).toEqual(
+      expect.arrayContaining([expect.objectContaining({ message: 'Informe um telefone válido.' })]),
+    );
+  });
+
   it('provides guidance in the address inputs', () => {
     fixture.detectChanges();
     for (const id of ['restaurant-street', 'restaurant-complement', 'restaurant-neighborhood', 'restaurant-city']) {

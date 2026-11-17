@@ -74,7 +74,9 @@ export class RestaurantSignup {
 
     required(path.phone, { message: 'Informe o telefone comercial.' });
     minLength(path.phone, 10, { message: 'Informe o telefone com DDD.' });
-    maxLength(path.phone, 11, { message: 'Informe um telefone válido.' });
+    validate(path.phone, ({ value }) =>
+      value().length > 11 ? { kind: 'maxLength', message: 'Informe um telefone válido.' } : null,
+    );
 
     required(path.postalCode, { message: 'Informe o CEP.' });
     minLength(path.postalCode, 8, { message: 'Informe os 8 dígitos do CEP.' });

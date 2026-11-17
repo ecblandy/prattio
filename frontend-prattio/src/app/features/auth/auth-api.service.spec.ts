@@ -73,6 +73,19 @@ describe('AuthApiService', () => {
     await expect(registration).resolves.toBeUndefined();
   });
 
+  it('posts personal registration data to the authentication API', async () => {
+    const data = {
+      name: 'Pessoa Teste', email: 'teste@example.test', cpf: '52998224725',
+      phone: '71912345678', password: 'secure-password', acceptedTerms: true, role: 'client' as const,
+    };
+    const registration = service.registerPersonal(data);
+    const request = httpTestingController.expectOne('/api/auth/register');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual(data);
+    request.flush({ message: 'Cadastro criado.' }, { status: 201, statusText: 'Created' });
+    await expect(registration).resolves.toBeUndefined();
+  });
+
   it('saves guide completion with the session token and updates the current user', async () => {
     const login = service.login({ email: 'store@example.test', password: 'secure-password' });
     httpTestingController.expectOne('/api/auth/login').flush({

@@ -50,6 +50,16 @@ export interface RestaurantRegistration {
   state: string;
 }
 
+export interface PersonalRegistration {
+  name: string;
+  email: string;
+  cpf: string;
+  phone: string;
+  password: string;
+  role: 'client' | 'motoboy';
+  acceptedTerms: boolean;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthApiService {
   private readonly http = inject(HttpClient);
@@ -72,6 +82,10 @@ export class AuthApiService {
 
   async registerRestaurant(data: RestaurantRegistration): Promise<void> {
     await firstValueFrom(this.http.post<{ message: string }>(`${API_BASE_URL}/restaurants`, data));
+  }
+
+  async registerPersonal(data: PersonalRegistration): Promise<void> {
+    await firstValueFrom(this.http.post<{ message: string }>(`${API_BASE_URL}/auth/register`, data));
   }
 
   async confirmEmail(token: string): Promise<void> {

@@ -19,7 +19,7 @@ export class EmailChangeService {
   async request(userId: string, data: RequestEmailChangeDto): Promise<{ message: string }> {
     this.email.ensureConfigured();
     const [user] = await this.database.db.select({
-      email: users.email, passwordHash: users.passwordHash, verifiedAt: users.emailVerifiedAt,
+      email: users.email, passwordHash: users.passwordHash, verifiedAt: users.emailVerifiedAt, role: users.role,
     }).from(users).where(eq(users.id, userId)).limit(1);
     if (!user || !user.verifiedAt || !(await argon2.verify(user.passwordHash, data.password))) {
       throw new UnauthorizedException('Senha incorreta ou sessão indisponível.');
@@ -33,8 +33,7 @@ export class EmailChangeService {
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
     await this.database.db.insert(emailChangeTokens).values({ userId, newEmail: data.email, codeHash, expiresAt })
       .onConflictDoUpdate({ target: emailChangeTokens.userId, set: { newEmail: data.email, codeHash, expiresAt, attempts: 0 } });
-    await this.email.sendMessage(data.email, 'Confirme a alteração de e-mail na Prattio',
-      `Seu código para confirmar o novo e-mail na Prattio é: ${code}\n\nO código é válido por 15 minutos. Se você não solicitou a alteração, ignore este e-mail.`);
+    await this.email.sendEmailChange(data.email, code, user.role);
     return { message: 'Enviamos um código de confirmação para o novo e-mail.' };
   }
 

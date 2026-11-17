@@ -180,12 +180,6 @@
       />
     </div>
 
-    @if (submissionReady()) {
-      <p role="status" class="rounded-lg border border-line bg-surface p-3 text-sm text-muted">
-        Dados validados. O envio do cadastro depende da integração com o serviço.
-      </p>
-    }
-
     <button
       type="submit"
       [disabled]="clientForm().submitting()"

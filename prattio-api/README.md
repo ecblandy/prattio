@@ -115,6 +115,25 @@ Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
 
 ## Login
 
+### Cadastro de cliente e motoboy
+
+`POST /auth/register` recebe `name`, `email`, `cpf`, `phone`, `password`,
+`role` (`client` ou `motoboy`) e `acceptedTerms: true`. O CPF deve ser válido,
+o celular deve ter 11 dígitos com DDD e a senha deve ter de 8 a 128 caracteres.
+O mesmo CPF pode ser usado nos dois perfis, mas cada conta precisa de um e-mail
+distinto. O cadastro exige confirmação de e-mail antes do login e usa a mesma
+configuração de envio do cadastro de restaurantes.
+
+Os e-mails de confirmação de cadastro e de alteração de endereço incluem HTML
+com a identidade do perfil (incluindo a marca de motoboy) e uma versão em texto.
+As imagens usam URLs de `PUBLIC_APP_URL`: em implantação, esse endereço deve ser
+HTTPS e estar acessível publicamente para que os clientes de e-mail exibam os logos.
+
+Antes de habilitar o cadastro, aplique as migrações, incluindo
+`0007_personal_profiles`. Em um banco novo, inicialize também o esquema base
+`0000_users.sql` antes de executar `node scripts/migrate.mjs`. Não execute o
+script de inicialização novamente em um banco existente.
+
 ### Comunicação com o frontend
 
 O frontend usa `/api` na mesma origem, com proxy para a API. Para acessar a

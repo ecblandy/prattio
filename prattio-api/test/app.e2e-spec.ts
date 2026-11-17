@@ -11,6 +11,7 @@ import { AppModule } from './../src/app.module.js';
 import { RestaurantFeedbackService } from './../src/auth/restaurant-feedback.service.js';
 import { AnnouncementsService } from './../src/auth/announcements.service.js';
 import { EmailChangeService } from './../src/auth/email-change.service.js';
+import { PersonalRegistrationService } from './../src/auth/personal-registration.service.js';
 import { io, Socket } from 'socket.io-client';
 import type { AddressInfo } from 'node:net';
 import { corsOptions } from './../src/cors.config.js';
@@ -19,6 +20,7 @@ describe('AppController (e2e)', () => {
   let app: INestApplication<App>;
   let findByEmail: ReturnType<typeof vi.fn>;
   let register: ReturnType<typeof vi.fn>;
+  let registerPersonal: ReturnType<typeof vi.fn>;
   let completeRestaurantOnboarding: ReturnType<typeof vi.fn>;
   let submitFeedback: ReturnType<typeof vi.fn>;
   let listAnnouncements: ReturnType<typeof vi.fn>;
@@ -46,6 +48,7 @@ describe('AppController (e2e)', () => {
     findByEmail = vi.fn().mockResolvedValue(undefined);
     completeRestaurantOnboarding = vi.fn().mockResolvedValue(true);
     register = vi.fn().mockResolvedValue({ message: 'Restaurante cadastrado com sucesso.' });
+    registerPersonal = vi.fn().mockResolvedValue({ message: 'Cadastro criado. Confirme seu e-mail para entrar.' });
     submitFeedback = vi.fn().mockResolvedValue({ message: 'Relato registrado.' });
     listAnnouncements = vi.fn().mockResolvedValue([]);
     markAnnouncementRead = vi.fn().mockResolvedValue({ message: 'Aviso marcado como lido.' });
@@ -60,6 +63,8 @@ describe('AppController (e2e)', () => {
       .useValue({ findByEmail, completeRestaurantOnboarding })
       .overrideProvider(RestaurantsService)
       .useValue({ register })
+      .overrideProvider(PersonalRegistrationService)
+      .useValue({ register: registerPersonal })
       .overrideProvider(RestaurantFeedbackService)
       .useValue({ submit: submitFeedback })
       .overrideProvider(AnnouncementsService)
@@ -163,6 +168,31 @@ describe('AppController (e2e)', () => {
       .post('/auth/login')
       .send({ email: 'not-an-email', password: 'short' })
       .expect(400);
+  });
+
+  it('accepts both personal roles and normalizes registration details', async () => {
+    const data = {
+      name: ' Pessoa Teste ', email: 'TESTE@example.test', cpf: '529.982.247-25',
+      phone: '(71) 91234-5678', password: 'secure-password', acceptedTerms: true,
+    };
+    for (const role of ['client', 'motoboy']) {
+      await request(app.getHttpServer()).post('/auth/register').send({ ...data, role }).expect(201);
+      expect(registerPersonal).toHaveBeenLastCalledWith({
+        ...data, name: 'Pessoa Teste', email: 'teste@example.test',
+        cpf: '52998224725', phone: '71912345678', role,
+      });
+    }
+  });
+
+  it('rejects invalid CPF, unaccepted terms and unsupported roles', async () => {
+    const valid = {
+      name: 'Pessoa Teste', email: 'teste@example.test', cpf: '52998224725',
+      phone: '71912345678', password: 'secure-password', acceptedTerms: true, role: 'client',
+    };
+    await request(app.getHttpServer()).post('/auth/register').send({ ...valid, cpf: '11111111111' }).expect(400);
+    await request(app.getHttpServer()).post('/auth/register').send({ ...valid, acceptedTerms: false }).expect(400);
+    await request(app.getHttpServer()).post('/auth/register').send({ ...valid, role: 'restaurant' }).expect(400);
+    expect(registerPersonal).not.toHaveBeenCalled();
   });
 
   it('/auth/onboarding/complete requires a valid restaurant session', async () => {

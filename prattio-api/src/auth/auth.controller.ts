@@ -16,6 +16,8 @@ import { EmailChangeService } from './email-change.service.js';
 import { RequestEmailChangeDto } from './dto/request-email-change.dto.js';
 import { ConfirmEmailChangeDto } from './dto/confirm-email-change.dto.js';
 import { AnnouncementsGateway } from './announcements.gateway.js';
+import { PersonalRegistrationService } from './personal-registration.service.js';
+import { RegisterPersonalDto } from './dto/register-personal.dto.js';
 
 @Controller('auth')
 export class AuthController {
@@ -26,7 +28,15 @@ export class AuthController {
     private readonly announcements: AnnouncementsService,
     private readonly emailChange: EmailChangeService,
     private readonly announcementsGateway: AnnouncementsGateway,
+    private readonly personalRegistration: PersonalRegistrationService,
   ) {}
+
+  @Post('register')
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  register(@Body() data: RegisterPersonalDto) {
+    return this.personalRegistration.register(data);
+  }
 
   @Post('login')
   @HttpCode(HttpStatus.OK)

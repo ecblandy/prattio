@@ -4,6 +4,9 @@ import { createHash, randomBytes } from 'node:crypto';
 import { and, eq, gt, isNull, sql } from 'drizzle-orm';
 import { DatabaseService } from '../database/database.service.js';
 import { emailVerificationTokens, users } from '../database/schema.js';
+import { emailChangeEmail, EmailMessage, verificationEmail } from './email-templates.js';
+
+type UserRole = typeof users.$inferSelect.role;
 
 @Injectable()
 export class EmailVerificationService {
@@ -38,7 +41,7 @@ export class EmailVerificationService {
     return { apiKey, from, publicUrl };
   }
 
-  async sendForUser(userId: string, email: string): Promise<void> {
+  async sendForUser(userId: string, email: string, role: UserRole): Promise<void> {
     const { publicUrl } = this.ensureConfigured();
     const token = randomBytes(32).toString('hex');
     const tokenHash = createHash('sha256').update(token).digest('hex');
@@ -52,14 +55,15 @@ export class EmailVerificationService {
 
     const link = new URL('/auth/confirm-email', publicUrl);
     link.hash = `token=${token}`;
-    await this.sendMessage(
-      email,
-      'Confirme seu e-mail na Prattio',
-      `Confirme seu e-mail para acessar a Prattio:\n\n${link.href}\n\nO link é válido por uma hora. Se você não solicitou este cadastro, ignore este e-mail.`,
-    );
+    await this.sendMessage(email, verificationEmail(publicUrl, role, link));
   }
 
-  async sendMessage(email: string, subject: string, text: string): Promise<void> {
+  async sendEmailChange(email: string, code: string, role: UserRole): Promise<void> {
+    const { publicUrl } = this.ensureConfigured();
+    await this.sendMessage(email, emailChangeEmail(publicUrl, role, code));
+  }
+
+  private async sendMessage(email: string, message: EmailMessage): Promise<void> {
     const { apiKey, from } = this.ensureConfigured();
     let response: Response;
     try {
@@ -69,8 +73,7 @@ export class EmailVerificationService {
         body: JSON.stringify({
           from,
           to: [email],
-          subject,
-          text,
+          ...message,
         }),
         signal: AbortSignal.timeout(10000),
       });
@@ -87,11 +90,11 @@ export class EmailVerificationService {
 
   async resend(email: string): Promise<{ message: string }> {
     this.ensureConfigured();
-    const [user] = await this.database.db.select({ id: users.id, email: users.email })
+    const [user] = await this.database.db.select({ id: users.id, email: users.email, role: users.role })
       .from(users)
       .where(and(eq(sql`lower(${users.email})`, email), isNull(users.emailVerifiedAt)))
       .limit(1);
-    if (user) await this.sendForUser(user.id, user.email);
+    if (user) await this.sendForUser(user.id, user.email, user.role);
     return { message: 'Se houver uma conta pendente, enviaremos um e-mail de confirmação.' };
   }
 

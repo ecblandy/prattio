@@ -58,7 +58,7 @@ export class RestaurantsService {
     }
 
     try {
-      await this.emailVerification.sendForUser(userId, data.email);
+      await this.emailVerification.sendForUser(userId, data.email, 'restaurant');
     } catch (error) {
       if (!(error instanceof ServiceUnavailableException)) throw error;
       throw new ServiceUnavailableException(

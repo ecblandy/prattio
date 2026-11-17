@@ -43,6 +43,13 @@
       "when": 1794893000000,
       "tag": "0006_email_change",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794894000000,
+      "tag": "0007_personal_profiles",
+      "breakpoints": true
     }
   ]
 }

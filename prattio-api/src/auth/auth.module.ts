@@ -12,6 +12,7 @@ import { SessionAuthGuard } from './session-auth.guard.js';
 import { AnnouncementsService } from './announcements.service.js';
 import { EmailChangeService } from './email-change.service.js';
 import { AnnouncementsGateway } from './announcements.gateway.js';
+import { PersonalRegistrationService } from './personal-registration.service.js';
 
 @Module({
   imports: [
@@ -30,6 +31,6 @@ import { AnnouncementsGateway } from './announcements.gateway.js';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, UsersRepository, RestaurantAuthGuard, RestaurantFeedbackService, SessionAuthGuard, AnnouncementsService, EmailChangeService, AnnouncementsGateway],
+  providers: [AuthService, UsersRepository, RestaurantAuthGuard, RestaurantFeedbackService, SessionAuthGuard, AnnouncementsService, EmailChangeService, AnnouncementsGateway, PersonalRegistrationService],
 })
 export class AuthModule {}

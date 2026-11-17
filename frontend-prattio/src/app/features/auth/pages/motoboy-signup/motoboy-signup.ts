@@ -1,5 +1,5 @@
-import { Component, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Component, inject, signal } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
 import { NgIcon } from '@ng-icons/core';
 import { NgxMaskDirective } from 'ngx-mask';
 
@@ -7,11 +7,15 @@ import {
   FormField,
   email,
   form,
+  maxLength,
   minLength,
   required,
   submit,
   validate,
 } from '@angular/forms/signals';
+import { ToastService } from '../../../../core/notifications/toast.service';
+import { AuthApiService } from '../../auth-api.service';
+import { submitPersonalSignup } from '../submit-personal-signup';
 
 interface MotoboySignupModel {
   name: string;
@@ -30,6 +34,10 @@ interface MotoboySignupModel {
   styleUrl: './motoboy-signup.css',
 })
 export class MotoboySignup {
+  private readonly authApi = inject(AuthApiService);
+  private readonly router = inject(Router);
+  private readonly toast = inject(ToastService);
+
   readonly model = signal<MotoboySignupModel>({
     name: '',
     email: '',
@@ -43,9 +51,11 @@ export class MotoboySignup {
   readonly motoboyForm = form(this.model, (path) => {
     required(path.name, { message: 'Informe seu nome completo.' });
     minLength(path.name, 3, { message: 'Informe seu nome completo.' });
+    maxLength(path.name, 120, { message: 'Use no máximo 120 caracteres.' });
 
     required(path.email, { message: 'Informe seu e-mail.' });
     email(path.email, { message: 'Informe um e-mail válido.' });
+    maxLength(path.email, 254, { message: 'Informe um e-mail válido.' });
 
     required(path.cpf, { message: 'Informe seu CPF.' });
     minLength(path.cpf, 11, { message: 'Informe os 11 dígitos do CPF.' });
@@ -54,6 +64,7 @@ export class MotoboySignup {
 
     required(path.password, { message: 'Informe sua senha.' });
     minLength(path.password, 8, { message: 'A senha deve ter pelo menos 8 caracteres.' });
+    maxLength(path.password, 128, { message: 'A senha deve ter no máximo 128 caracteres.' });
     required(path.confirmPassword, { message: 'Confirme sua senha.' });
     validate(path.confirmPassword, ({ value, valueOf }) => {
       if (!value() || value() === valueOf(path.password)) return null;
@@ -68,13 +79,14 @@ export class MotoboySignup {
 
   readonly showPassword = signal(false);
   readonly showConfirmPassword = signal(false);
-  readonly submissionReady = signal(false);
-
   async onSubmit(event: SubmitEvent): Promise<void> {
     event.preventDefault();
 
-    await submit(this.motoboyForm, async () => {
-      this.submissionReady.set(true);
+    await submit(this.motoboyForm, async (field) => {
+      const { confirmPassword: _confirmPassword, ...data } = field().value();
+      await submitPersonalSignup(this.authApi, this.router, this.toast, {
+        ...data, role: 'motoboy',
+      });
     });
   }
 }

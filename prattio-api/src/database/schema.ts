@@ -18,6 +18,13 @@ export const users = pgTable(
   (table) => [uniqueIndex('users_email_unique').on(sql`lower(${table.email})`)],
 );
 
+export const personalProfiles = pgTable('personal_profiles', {
+  userId: uuid('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+  cpf: varchar('cpf', { length: 11 }).notNull(),
+  phone: varchar('phone', { length: 11 }).notNull(),
+  termsAcceptedAt: timestamp('terms_accepted_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const emailVerificationTokens = pgTable(
   'email_verification_tokens',
   {

@@ -66,6 +66,8 @@ services:
   frontend:
     build:
       context: ../frontend-prattio
+    environment:
+      API_UPSTREAM: api
     ports:
       - "127.0.0.1:18080:80"
     depends_on:

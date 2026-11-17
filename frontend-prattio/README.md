@@ -38,6 +38,11 @@ ainda não estão conectados.
 A API usa o caminho relativo `/api`, centralizado na configuração do frontend.
 O proxy de desenvolvimento e o Nginx encaminham as requisições e o WebSocket
 para o backend; o interceptor não adiciona credenciais a serviços externos.
+Na imagem Docker, `API_UPSTREAM` define o nome interno da API; o Compose local
+usa `api` e, por padrão, a imagem usa o nome do serviço no Dokploy.
+Os cadastros de cliente e motoboy exigem CPF válido, aceitação dos termos e
+confirmação de e-mail. O mesmo CPF pode ser usado nos dois perfis com e-mails
+diferentes; o envio depende da configuração de e-mail e das migrações da API.
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.0.4.
 
