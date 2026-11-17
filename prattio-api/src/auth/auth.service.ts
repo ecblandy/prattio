@@ -40,7 +40,7 @@ export class AuthService {
         name: user.name,
         email: user.email,
         role: user.role,
-''        onboardingCompleted: Boolean(user.onboardingCompletedAt),
+        onboardingCompleted: Boolean(user.onboardingCompletedAt),
       },
     };
   }
