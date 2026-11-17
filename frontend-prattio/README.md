@@ -1,5 +1,10 @@
 # FrontendPrattio
 
+## Monorepositório
+
+O frontend e a API ficam nas pastas `frontend-prattio` e `prattio-api` da
+mesma raiz Git. Execute os comandos npm na pasta do respectivo projeto.
+
 ## Visão geral do restaurante
 
 A visão geral usa exclusivamente dados demonstrativos locais, não pedidos ou vendas reais.
